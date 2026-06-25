@@ -1,0 +1,21 @@
+{
+  "name": "@pm-ai/indexer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "pm-index": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@pm-ai/core": "workspace:*",
+    "tree-sitter-wasms": "^0.1.12",
+    "web-tree-sitter": "^0.24.5"
+  }
+}

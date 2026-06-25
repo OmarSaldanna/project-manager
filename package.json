@@ -1,0 +1,25 @@
+{
+  "name": "pm-ai",
+  "version": "0.3.1",
+  "private": true,
+  "description": "PM·AI — Asistente de Project Manager con RAG e índice simbólico de código (Engine CX)",
+  "type": "module",
+  "packageManager": "pnpm@11.5.1",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=11"
+  },
+  "scripts": {
+    "preinstall": "npx --yes only-allow pnpm",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "lint": "pnpm -r lint"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "pg": "^8.21.0",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}

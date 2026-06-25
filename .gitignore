@@ -1,0 +1,19 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+coverage/
+.DS_Store
+
+# Estado local de PM·AI: solo se versiona manager/PRD.md; el resto es local.
+manager/*
+!manager/PRD.md
+
+# Proyectos de muestra (datos de clientes) y material interno: NO se distribuyen.
+# Los tests unitarios del plugin viven en packages/*/src/*.test.ts; tests/ es el
+# corpus de benchmark (referencia proyectos de clientes) y no se publica.
+examples/
+avances/
+pruebas/
+tests/

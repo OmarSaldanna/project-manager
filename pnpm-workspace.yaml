@@ -1,0 +1,6 @@
+packages:
+  - "packages/*"
+# Allowlist explícito de build scripts (política de seguridad, guias/gestion-paquetes.md).
+# Solo paquetes confiables y necesarios. esbuild: runtime de bundling de vitest.
+allowBuilds:
+  esbuild: true

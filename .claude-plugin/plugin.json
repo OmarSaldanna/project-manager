@@ -1,0 +1,31 @@
+{
+  "name": "pm-ai",
+  "version": "0.4.0",
+  "description": "Project Manager con IA: RAG de documentación + índice simbólico de código, trazabilidad de cambios (changelog por entidad y reporte /pm-trace), memoria de estado por proyecto y guías de la organización. Engine CX.",
+  "author": {
+    "name": "Engine CX"
+  },
+  "userConfig": {
+    "supabase_service_key": {
+      "type": "string",
+      "title": "Supabase Service Key",
+      "description": "Service role key del proyecto Supabase (Project Settings → API Keys). Se guarda en el llavero del sistema.",
+      "sensitive": true,
+      "required": true
+    },
+    "embeddings_key": {
+      "type": "string",
+      "title": "Embeddings API Key",
+      "description": "Clave del endpoint de embeddings compatible con OpenAI (/embeddings).",
+      "sensitive": true,
+      "required": true
+    },
+    "llm_key": {
+      "type": "string",
+      "title": "LLM API Key (opcional)",
+      "description": "Clave del LLM para describir código (<=2 oraciones). Dejala vacia para usar la firma de la funcion como descripcion (sin LLM).",
+      "sensitive": true,
+      "required": false
+    }
+  }
+}

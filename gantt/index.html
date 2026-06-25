@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plan de Proyecto · Tablero de avance</title>
+<style>
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --surface-2: #f0f2f5;
+    --border: #e3e6ea;
+    --text: #1c2430;
+    --text-soft: #5b6675;
+    --text-faint: #8a93a0;
+    --accent: #3b6cff;
+    --accent-soft: #e7eeff;
+    --done: #1faa6f;
+    --done-soft: #e3f6ec;
+    --track-bar: #c5d2f5;
+    --track-fill: #3b6cff;
+    --shadow: 0 1px 3px rgba(20,30,50,.06), 0 8px 24px rgba(20,30,50,.05);
+    --grid-line: #edf0f4;
+    --label-w: 240px;
+    --radius: 14px;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  html[data-theme="dark"] {
+    --bg: #0e1116;
+    --surface: #161b22;
+    --surface-2: #1c232d;
+    --border: #2a323d;
+    --text: #e6eaf0;
+    --text-soft: #a4afbd;
+    --text-faint: #6c7785;
+    --accent: #6f93ff;
+    --accent-soft: #1e2a45;
+    --done: #38c98c;
+    --done-soft: #16302a;
+    --track-bar: #2f3b54;
+    --track-fill: #6f93ff;
+    --shadow: 0 1px 3px rgba(0,0,0,.4), 0 8px 28px rgba(0,0,0,.35);
+    --grid-line: #20272f;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background .3s ease, color .3s ease;
+  }
+
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 28px; }
+
+  /* ---------- Lamp / dark mode toggle ---------- */
+  .lamp-btn {
+    position: fixed; top: 22px; right: 26px; z-index: 50;
+    width: 46px; height: 46px; border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    cursor: pointer; display: grid; place-items: center;
+    transition: background .3s ease, border-color .3s ease, transform .15s ease;
+  }
+  .lamp-btn:hover { transform: translateY(-1px); }
+  .lamp-btn:active { transform: translateY(0); }
+  .lamp-btn svg { width: 22px; height: 22px; }
+  .lamp-glow { fill: transparent; transition: fill .3s ease, filter .3s ease; }
+  .lamp-body { fill: none; stroke: var(--text-soft); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; transition: stroke .3s ease; }
+  html[data-theme="dark"] .lamp-glow { fill: #ffd25e; filter: drop-shadow(0 0 6px rgba(255,210,94,.8)); }
+  html[data-theme="dark"] .lamp-body { stroke: #ffd25e; }
+
+  /* ---------- Hero / tablero full screen ---------- */
+  .hero {
+    min-height: 100vh; min-height: 100svh;
+    display: flex; flex-direction: column;
+    padding: 40px 0 28px;
+  }
+  .project-head { padding-top: 8px; }
+  .project-eyebrow {
+    font-family: var(--mono); font-size: 12px; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--text-faint); margin-bottom: 8px;
+    display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: .04em;
+    padding: 3px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    text-transform: none;
+  }
+  .pill.dot::before { content:""; width:6px; height:6px; border-radius:50%; background: currentColor; }
+  .eyebrow-code { text-transform: none; letter-spacing: .02em; }
+  h1.project-title { font-size: clamp(26px, 4vw, 40px); margin: 0 0 10px; letter-spacing: -.02em; font-weight: 700; }
+  .project-desc { color: var(--text-soft); max-width: 760px; font-size: 16px; margin: 0 0 22px; }
+
+  .meta-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1px; background: var(--border); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; margin-bottom: 26px;
+  }
+  .meta-cell { background: var(--surface); padding: 14px 18px; }
+  .meta-cell .k { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); margin-bottom: 4px; }
+  .meta-cell .v { font-size: 15px; font-weight: 600; }
+
+  /* ---------- Tablero de tareas (avance) ---------- */
+  .gantt-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    flex: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 0;
+  }
+  .gantt-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 20px; border-bottom: 1px solid var(--border); flex-wrap: wrap; gap: 12px;
+  }
+  .gantt-card-head h2 { margin: 0; font-size: 16px; font-weight: 650; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; }
+  .legend span { font-size: 12px; color: var(--text-soft); display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 22px; height: 9px; border-radius: 3px; display: inline-block; }
+  .li-plan { background: var(--track-bar); }
+  .li-done { background: var(--track-fill); }
+
+  .gantt-scroll { overflow: auto; flex: 1; min-height: 0; }
+  .gantt { display: grid; min-width: 560px; }
+  .g-row { display: grid; grid-template-columns: var(--label-w) 1fr; align-items: stretch; }
+  .g-row:not(:last-child) { border-bottom: 1px solid var(--grid-line); }
+  .g-label {
+    padding: 11px 18px; display: flex; flex-direction: column; justify-content: center;
+    border-right: 1px solid var(--border); position: sticky; left: 0; z-index: 3;
+    background: var(--surface);
+  }
+  .g-label .t { font-size: 13.5px; font-weight: 600; line-height: 1.25; }
+  .g-label .s { font-size: 11px; color: var(--text-faint); font-family: var(--mono); margin-top: 2px; }
+
+  .g-track { position: relative; min-height: 44px; }
+  .g-grid { position: absolute; inset: 0; display: flex; pointer-events: none; }
+  .g-grid .col { border-right: 1px solid var(--grid-line); }
+
+  /* Eje de calendario: cabecera con los meses del proyecto, alineada con las barras. */
+  .g-axis { display: grid; grid-template-columns: var(--label-w) 1fr; position: sticky; top: 0; z-index: 4; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .g-axis .axis-corner {
+    border-right: 1px solid var(--border); padding: 8px 18px;
+    font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint);
+    position: sticky; left: 0; z-index: 2; background: var(--surface); display: flex; align-items: center;
+  }
+  .g-axis .axis-months { display: flex; }
+  .g-axis .axis-m {
+    border-right: 1px solid var(--border); padding: 8px 10px; min-width: 0;
+    font-size: 11.5px; font-weight: 600; color: var(--text-soft); font-family: var(--mono);
+    white-space: nowrap; overflow: hidden; text-overflow: clip;
+  }
+
+  /* Marca del día de hoy (si cae dentro del rango del proyecto). */
+  .g-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); opacity: .5; pointer-events: none; z-index: 2; }
+
+  /* Barra posicionada por FECHAS: left = (inicio − inicio del proyecto)/rango;
+     width = (fin+1día − inicio)/rango; el relleno es el % de avance. */
+  .g-bar {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    height: 22px; border-radius: 7px; background: var(--track-bar);
+    overflow: hidden; min-width: 8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.02);
+  }
+  .g-bar .fill { position: absolute; inset: 0; width: 0; background: var(--track-fill); border-radius: 7px; }
+  .g-bar .pct {
+    position: absolute; right: 7px; top: 50%; transform: translateY(-50%);
+    font-size: 10px; font-family: var(--mono); color: var(--text-soft);
+  }
+  .g-bar.complete { background: var(--done-soft); }
+  .g-bar.complete .fill { background: var(--done); }
+
+  .scroll-cue {
+    text-align: center; color: var(--text-faint); font-size: 12px;
+    padding: 16px 0 4px; letter-spacing: .04em;
+  }
+
+  /* ---------- Sprints ---------- */
+  .sprints-section { padding: 56px 0 80px; }
+  .section-head { margin-bottom: 22px; }
+  .section-head .project-eyebrow { margin-bottom: 6px; }
+  .section-head h2 { margin: 0; font-size: 24px; letter-spacing: -.01em; }
+  .section-head p { margin: 6px 0 0; color: var(--text-soft); max-width: 680px; }
+
+  .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+  .tab {
+    border: 1px solid var(--border); background: var(--surface);
+    border-radius: 999px; padding: 9px 16px; cursor: pointer;
+    font-size: 13.5px; font-weight: 600; color: var(--text-soft);
+    display: inline-flex; align-items: center; gap: 9px;
+    transition: all .18s ease; font-family: var(--sans);
+  }
+  .tab:hover { border-color: var(--accent); color: var(--text); }
+  .tab.active { background: var(--accent); border-color: var(--accent); color: #fff; box-shadow: var(--shadow); }
+  .tab .tab-prog {
+    font-family: var(--mono); font-size: 11px; padding: 1px 7px; border-radius: 999px;
+    background: var(--surface-2); color: var(--text-faint);
+  }
+  .tab.active .tab-prog { background: rgba(255,255,255,.22); color: #fff; }
+  .tab.done { border-color: var(--done); color: var(--done); }
+  .tab.done.active { background: var(--done); border-color: var(--done); color: #fff; }
+  .tab .check { width: 15px; height: 15px; display: none; }
+  .tab.done .check { display: inline-block; }
+
+  .sprint-panel {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .sprint-panel-head {
+    padding: 22px 26px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap;
+  }
+  .sprint-panel-head .sp-name { font-size: 19px; font-weight: 700; margin: 0; letter-spacing: -.01em; }
+  .sprint-panel-head .sp-sub { color: var(--text-faint); font-size: 13px; margin-top: 2px; }
+  .sprint-panel-head .sp-goal { color: var(--text-soft); margin-top: 12px; max-width: 620px; font-size: 14.5px; }
+  .sp-badge {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+    font-size: 11px; font-weight: 600; padding: 4px 10px; border-radius: 999px;
+    background: var(--surface-2); color: var(--text-soft);
+  }
+  .sp-badge.done { background: var(--done-soft); color: var(--done); }
+
+  .sp-progressbar { height: 4px; background: var(--surface-2); }
+  .sp-progressbar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .4s ease; }
+  .sp-progressbar.done > i { background: var(--done); }
+
+  .objectives { list-style: none; margin: 0; padding: 8px; }
+  .obj {
+    display: flex; gap: 14px; padding: 16px; border-radius: 10px;
+    align-items: flex-start;
+  }
+  .obj-check {
+    flex: none; width: 22px; height: 22px; border-radius: 7px; margin-top: 1px;
+    border: 2px solid var(--border); display: grid; place-items: center;
+    transition: all .18s ease; background: var(--surface);
+  }
+  .obj-check svg { width: 13px; height: 13px; opacity: 0; transform: scale(.5); transition: all .18s ease; stroke: #fff; }
+  .obj-body .o-title { font-weight: 600; font-size: 15px; transition: color .18s ease; }
+  .obj-body .o-desc { color: var(--text-soft); font-size: 14px; margin-top: 3px; }
+  .obj.completed .obj-check { background: var(--done); border-color: var(--done); }
+  .obj.completed .obj-check svg { opacity: 1; transform: scale(1); }
+  .obj.completed .o-title { color: var(--text-faint); text-decoration: line-through; text-decoration-color: var(--text-faint); }
+  .obj.completed .o-desc { color: var(--text-faint); }
+
+  .loading, .error {
+    min-height: 60vh; display: grid; place-items: center; text-align: center;
+    color: var(--text-faint); padding: 40px;
+  }
+  .error code { background: var(--surface-2); padding: 2px 8px; border-radius: 6px; font-size: 13px; color: var(--text); }
+
+  footer.report-foot {
+    border-top: 1px solid var(--border); color: var(--text-faint);
+    font-size: 12px; font-family: var(--mono); padding: 20px 0 60px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+
+  @media (max-width: 640px) {
+    :root { --label-w: 150px; }
+    .wrap { padding: 0 16px; }
+    .g-label { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<button class="lamp-btn" id="lampBtn" aria-label="Cambiar modo claro/oscuro" title="Modo claro / oscuro">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle class="lamp-glow" cx="12" cy="9" r="5.2"></circle>
+    <path class="lamp-body" d="M12 3.2a5.8 5.8 0 0 0-3.4 10.5c.5.4.8.9.9 1.5l.2 1.1h4.6l.2-1.1c.1-.6.4-1.1.9-1.5A5.8 5.8 0 0 0 12 3.2Z"></path>
+    <path class="lamp-body" d="M9.7 18.6h4.6M10.3 20.6h3.4"></path>
+  </svg>
+</button>
+
+<main id="app">
+  <div class="loading">Cargando plan de proyecto…</div>
+</main>
+
+<!-- Contenido del proyecto: editar gantt.js -->
+<script src="gantt.js"></script>
+
+<script>
+/* ============================================================
+   Plantilla de planeación de proyectos — render desde gantt.js
+   CON FECHAS: el tablero es una línea de tiempo real. Cada tarea
+   trae start/end (ISO "YYYY-MM-DD") y la barra se posiciona sobre
+   un eje de meses. No se toca este JS; el contenido va en gantt.js.
+   ============================================================ */
+
+/* ---------- tema (lámpara) ---------- */
+const root = document.documentElement;
+const saved = localStorage.getItem('gantt-theme');
+if (saved) root.setAttribute('data-theme', saved);
+document.getElementById('lampBtn').addEventListener('click', () => {
+  const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('gantt-theme', next);
+});
+
+/* ---------- utilidades ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------- estado de objetivos (solo lectura desde gantt.js) ---------- */
+const isDone = (data, sprintId, objId) => {
+  const sp = data.sprints.find(s => s.id === sprintId);
+  const ob = sp && sp.objectives.find(o => o.id === objId);
+  return ob ? !!ob.completed : false;
+};
+
+/* ---------- render principal ---------- */
+function render(data) {
+  const p = data.project;
+  const app = document.getElementById('app');
+
+  // título de la pestaña del navegador (editable desde gantt.js -> project.name)
+  document.title = p.name || document.title;
+
+  const tasks = data.gantt.tasks || [];
+  const sprintName = id => {
+    const s = (data.sprints || []).find(s => s.id === id);
+    return s ? s.name : '';
+  };
+  const isFinished = t => !!t.finished || (t.progress || 0) >= 100;
+
+  // ----- Línea de tiempo por FECHAS -----
+  // Cada tarea trae start/end en ISO "YYYY-MM-DD". El tablero se escala al rango
+  // [primer inicio, último fin] y cada barra se posiciona por sus fechas.
+  const DAY = 86400000;
+  const parseD = s => { const [y, m, d] = String(s || '').split('-').map(Number);
+    return (y && m && d) ? new Date(y, m - 1, d).getTime() : null; };
+  const fmt = ms => new Date(ms).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
+
+  const dated = tasks.map(t => ({ s: parseD(t.start), e: parseD(t.end) }))
+                     .filter(x => x.s !== null && x.e !== null);
+  const minT = dated.length ? Math.min(...dated.map(x => x.s)) : Date.now();
+  const maxT = dated.length ? Math.max(...dated.map(x => x.e)) : minT + DAY;
+  const rangeEnd = maxT + DAY;                       // fin inclusivo: cubre el último día
+  const range = Math.max(DAY, rangeEnd - minT);
+  const totalDias = Math.round(range / DAY);
+
+  // Segmentos de mes para el eje y la rejilla de fondo (anchos proporcionales al rango).
+  const months = [];
+  { let cur = new Date(minT); cur = new Date(cur.getFullYear(), cur.getMonth(), 1);
+    while (cur.getTime() < rangeEnd) {
+      const next = new Date(cur.getFullYear(), cur.getMonth() + 1, 1);
+      const a = Math.max(cur.getTime(), minT), b = Math.min(next.getTime(), rangeEnd);
+      months.push({ label: cur.toLocaleDateString('es', { month: 'short', year: '2-digit' }), w: (b - a) / range * 100 });
+      cur = next;
+    } }
+  const axisMonths = months.map(m => `<div class="axis-m" style="width:${m.w}%">${esc(m.label)}</div>`).join('');
+  const gridCols = months.map(m => `<div class="col" style="width:${m.w}%"></div>`).join('');
+  const axisHtml = `<div class="g-axis"><div class="axis-corner">Actividad</div><div class="axis-months">${axisMonths}</div></div>`;
+
+  // Marca del día de hoy (si cae dentro del rango). Se repite por fila → línea continua.
+  const nowMs = Date.now();
+  const todayLeft = (nowMs >= minT && nowMs <= rangeEnd) ? (nowMs - minT) / range * 100 : null;
+  const todayHtml = todayLeft !== null ? `<div class="g-today" style="left:${todayLeft}%"></div>` : '';
+
+  // Avance global = promedio simple del "progress" de todas las tareas.
+  const avancePromedio = tasks.length
+    ? Math.round(tasks.reduce((s, t) => s + (t.progress || 0), 0) / tasks.length) : 0;
+  // Estado automático: "Finalizado" si TODAS las tareas están terminadas; si no, "En Progreso".
+  const st = (p.status && typeof p.status === 'object') ? p.status : {};
+  const estadoTexto = (tasks.length && tasks.every(isFinished))
+    ? (st.done || '✅ Finalizado')
+    : (st.inProgress || '🚧 En Progreso');
+  const periodoTexto = dated.length ? `${fmt(minT)} – ${fmt(maxT)}` : '—';
+
+  // Filas del tablero: una por tarea. La barra se posiciona por FECHAS:
+  // left = (inicio − inicio del proyecto)/rango; width = (fin+1día − inicio)/rango.
+  const rows = tasks.map(t => {
+    const s = parseD(t.start), e = parseD(t.end);
+    const has = s !== null && e !== null;
+    const left = has ? (s - minT) / range * 100 : 0;
+    const width = has ? Math.max(((e + DAY) - s) / range * 100, 1.2) : 0;
+    const complete = isFinished(t);
+    const prog = Math.max(0, Math.min(100, t.progress || 0));
+    const fechas = has ? `${fmt(s)} – ${fmt(e)}` : 'sin fechas';
+    const sub = [t.track, sprintName(t.sprint), fechas].filter(Boolean).join(' · ');
+    const bar = has ? `<div class="g-bar ${complete ? 'complete' : ''}" style="left:${left}%;width:${width}%">
+            <div class="fill" style="width:${prog}%"></div>
+            <span class="pct">${prog}%</span>
+          </div>` : '';
+    return `
+      <div class="g-row">
+        <div class="g-label">
+          <span class="t">${esc(t.name)}</span>
+          <span class="s">${esc(sub)}</span>
+        </div>
+        <div class="g-track">
+          <div class="g-grid">${gridCols}</div>
+          ${todayHtml}
+          ${bar}
+        </div>
+      </div>`;
+  }).join('');
+
+  app.innerHTML = `
+  <section class="hero">
+    <div class="wrap project-head">
+      <div class="project-eyebrow">
+        <span class="eyebrow-code">${esc(p.code || '')}</span>
+        <span class="pill">${esc(estadoTexto)}</span>
+      </div>
+      <h1 class="project-title">${esc(p.name)}</h1>
+      <p class="project-desc">${esc(p.description || '')}</p>
+
+      <div class="meta-grid">
+        <div class="meta-cell"><div class="k">Responsable</div><div class="v">${esc(pmanager || '—')}</div></div>
+        <div class="meta-cell"><div class="k">Equipo</div><div class="v">${esc(p.team || '—')}</div></div>
+        <div class="meta-cell"><div class="k">Estado</div><div class="v">${esc(estadoTexto)}</div></div>
+        <div class="meta-cell"><div class="k">Avance global</div><div class="v">${avancePromedio}%</div></div>
+        <div class="meta-cell"><div class="k">Periodo</div><div class="v">${esc(periodoTexto)}</div></div>
+        <div class="meta-cell"><div class="k">Días totales</div><div class="v">${totalDias}</div></div>
+      </div>
+    </div>
+
+    <div class="wrap" style="width:100%; flex:1; display:flex; flex-direction:column; min-height:0;">
+      <div class="gantt-card">
+        <div class="gantt-card-head">
+          <h2>Tareas y avance del proyecto</h2>
+          <div class="legend">
+            <span><i class="li-plan"></i> Planeado</span>
+            <span><i class="li-done"></i> Avance</span>
+          </div>
+        </div>
+        <div class="gantt-scroll">
+          <div class="gantt">
+            ${axisHtml}
+            ${rows}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="scroll-cue">↓ Sprints y objetivos</div>
+  </section>
+
+  <section class="sprints-section">
+    <div class="wrap">
+      <div class="section-head">
+        <div class="project-eyebrow"><span>Bitácora de ejecución</span></div>
+        <h2>Sprints y objetivos</h2>
+        <p>Cada pestaña es un sprint. Los objetivos muestran su estado de avance; cuando todos los objetivos de un sprint están completos, la pestaña se marca como completada.</p>
+      </div>
+      <div class="tabs" id="tabs"></div>
+      <div id="sprintPanel"></div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <footer class="report-foot">
+      <span>${esc(p.code || '')} · ${esc(p.name)}</span>
+      <span>Reporte de planeación</span>
+    </footer>
+  </div>`;
+
+  buildSprints(data);
+}
+
+/* ---------- sprints + tabs ---------- */
+let activeSprint = 0;
+function buildSprints(data) {
+  const tabsEl = document.getElementById('tabs');
+
+  function sprintDone(sp) { return sp.objectives.every(o => isDone(data, sp.id, o.id)); }
+  function sprintCount(sp) { return sp.objectives.filter(o => isDone(data, sp.id, o.id)).length; }
+
+  function renderTabs() {
+    tabsEl.innerHTML = data.sprints.map((sp, i) => {
+      const done = sprintDone(sp);
+      const n = sprintCount(sp), tot = sp.objectives.length;
+      return `<button class="tab ${i === activeSprint ? 'active' : ''} ${done ? 'done' : ''}" data-i="${i}">
+        <svg class="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        ${esc(sp.name)}
+        <span class="tab-prog">${n}/${tot}</span>
+      </button>`;
+    }).join('');
+    tabsEl.querySelectorAll('.tab').forEach(b =>
+      b.addEventListener('click', () => { activeSprint = +b.dataset.i; renderTabs(); renderPanel(); }));
+  }
+
+  function renderPanel() {
+    const sp = data.sprints[activeSprint];
+    const panel = document.getElementById('sprintPanel');
+    const done = sprintDone(sp);
+    const n = sprintCount(sp), tot = sp.objectives.length;
+    const pct = Math.round((n / tot) * 100);
+
+    panel.innerHTML = `
+      <div class="sprint-panel">
+        <div class="sprint-panel-head">
+          <div>
+            <h3 class="sp-name">${esc(sp.name)}</h3>
+            <div class="sp-sub">${esc(sp.subtitle || '')}</div>
+            <p class="sp-goal">${esc(sp.goal || '')}</p>
+            <span class="sp-badge ${done ? 'done' : ''}">${done ? '✓ Sprint completado' : `${n} de ${tot} objetivos`}</span>
+          </div>
+        </div>
+        <div class="sp-progressbar ${done ? 'done' : ''}"><i style="width:${pct}%"></i></div>
+        <ul class="objectives">
+          ${sp.objectives.map(o => {
+            const c = isDone(data, sp.id, o.id);
+            return `<li class="obj ${c ? 'completed' : ''}">
+              <span class="obj-check"><svg viewBox="0 0 24 24" fill="none" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
+              <span class="obj-body">
+                <span class="o-title">${esc(o.title)}</span>
+                <span class="o-desc">${esc(o.description || '')}</span>
+              </span>
+            </li>`;
+          }).join('')}
+        </ul>
+      </div>`;
+  }
+
+  renderTabs();
+  renderPanel();
+}
+
+/* ---------- carga (al final: ya están declaradas todas las funciones y variables) ----------
+   1) Usa la variable global de gantt.js (funciona con doble clic, sin servidor).
+   2) Si no existe (p.ej. renombraste el archivo a .json), intenta fetch.   */
+if (window.PROJECT_DATA) {
+  render(window.PROJECT_DATA);
+} else {
+  fetch('data.json')
+    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .then(render)
+    .catch(err => {
+      document.getElementById('app').innerHTML = `
+        <div class="error">
+          <div>
+            <p>No se encontró el contenido del proyecto (${esc(err.message)}).</p>
+            <p>Asegúrate de que <code>gantt.js</code> esté junto a <code>index.html</code>
+            y que el HTML lo incluya con <code>&lt;script src="gantt.js"&gt;&lt;/script&gt;</code>.</p>
+          </div>
+        </div>`;
+    });
+}
+</script>
+</body>
+</html>
