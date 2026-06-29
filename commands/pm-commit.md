@@ -27,8 +27,9 @@ Contexto que aporta el desarrollador (puede venir vacío): **$ARGUMENTS**
      repo, y `git remote get-url origin` (para `repo_url`).
    - **Propón** `project_id` (un slug estable y **determinista**: el nombre del repo en
      kebab-case), `nombre` legible y pregunta la `unidad` de negocio como **selección cerrada**
-     entre estas cuatro divisiones (no inventes ni aceptes otras): **Garantiplus**,
-     **Gplus Seguros**, **GoVirtual**, **EngineCX**.
+     entre estas seis divisiones (no inventes ni aceptes otras): **Go Virtual**,
+     **Garantiplus México**, **Garantiplus Colombia**, **Gplus Seguros**, **Invarat**,
+     **EngineCX**.
    - Tras confirmar, crea `manager/config.json`. Nota: `manager/` está en `.gitignore`,
      así que es local; por eso el `project_id` se deriva de forma determinista (un clon que
      re-inicialice obtiene el mismo id).

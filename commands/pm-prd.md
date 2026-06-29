@@ -23,6 +23,15 @@ Contexto/transcript/recurso que aporta el desarrollador (puede venir vacío): **
 
 - Flujo SIEMPRE **propuesta → revisión → confirmación**: no escribes `manager/PRD.md` hasta
   que el desarrollador confirme el borrador/diff final.
+- **Ante CUALQUIER duda, pregunta al usuario con OPCIÓN MÚLTIPLE (clave del comando).** Cuando
+  haya ambigüedad o conflicto sobre cómo integrar el transcript/recurso al PRD —qué sección
+  tocar, cómo resolver una contradicción con lo ya escrito, qué supuesto cambiar, qué entra al
+  MVP y qué se difiere— **DETENTE y consulta al usuario mediante preguntas de opción múltiple**:
+  presenta cada decisión con sus opciones concretas y una **recomendación** marcada, y deja que
+  él elija/apruebe. NUNCA resuelvas una duda por tu cuenta ni "en silencio". Tienes **plena
+  libertad de preguntar tantas veces como haga falta**, una decisión a la vez o agrupadas: el
+  propósito es que el usuario **gestione al detalle su PRD** y apruebe cada cambio antes de que
+  se escriba. Preguntar es preferible a asumir.
 - **Modo planeación.** Trabajas plan-first: primero diseñas/propones los cambios (apoyándote
   en las skills de **superpowers**), y solo tras la aprobación escribes. No edites el PRD ni
   el Gantt "a la mitad" de la conversación.
@@ -53,14 +62,47 @@ El desarrollador aporta transcripts de dos maneras; soporta ambas:
    `manager/transcripts/<nombre>.md`.
 2. **Dejándolos** en `manager/transcripts/`.
 
-**Detección de transcript NUEVO:** un archivo en `manager/transcripts/` que **no** tiene su
-condensado homónimo en `manager/transcripts-procesados/` es nuevo → ahí viene retroalimentación
-que debemos integrar al PRD. Para cada transcript nuevo, produce un **condensado** (solo lo
-relevante: decisiones, alcance, actores, requerimientos, riesgos; descarta saludos/relleno) y
-guárdalo en `manager/transcripts-procesados/<mismo-nombre>.md`. El original queda intacto.
+**Detección de transcript NUEVO (paso accionable):** lista `manager/transcripts/` y
+`manager/transcripts-procesados/` (con `Glob` o `ls`) y compáralas por nombre: todo original
+en `transcripts/` que **no** tenga su condensado homónimo en `transcripts-procesados/` es
+nuevo → ahí viene retroalimentación que debemos integrar al PRD.
+
+Para cada transcript nuevo, produce un **condensado** (solo lo relevante; descarta
+saludos/relleno) y guárdalo en `manager/transcripts-procesados/<mismo-nombre>.md`. El original
+queda intacto. Usa esta **plantilla fija** (omite un encabezado solo si no hay nada que poner):
+
+```markdown
+# Condensado — <nombre del transcript>
+
+## Decisiones
+- …
+
+## Alcance / requerimientos
+- …
+
+## Actores
+- …
+
+## Riesgos / pendientes
+- …
+
+## Fechas / hitos
+- …
+```
 
 **Formatos admitidos:** texto plano (`.txt`, `.md`) y archivos de código. **NO admitidos:**
 Word/PDF/binarios — comunícalo y pide una versión en texto/markdown; no lo conviertas.
+
+## Empresa / unidad de negocio (selección cerrada, OBLIGATORIA)
+
+El campo **"Área / empresa"** del encabezado del PRD es una **selección cerrada** entre estas
+seis (no inventes ni aceptes otras), la MISMA lista que usa `/pm-gantt`:
+
+> **Go Virtual · Garantiplus México · Garantiplus Colombia · Gplus Seguros · Invarat · EngineCX**
+
+Pregúntala como selección al crear el PRD por primera vez y úsala en el encabezado. Debe
+**coincidir** con `project.empresa` del Gantt. (Esta lista cerrada tiene precedencia sobre los
+ejemplos de área que aparecen en el prompt entrevistador.)
 
 ## Paso 0 — Entrada (¿continuar, ingerir o crear?)
 
@@ -81,12 +123,19 @@ Es el camino habitual: integrar el feedback de un transcript nuevo al PRD y pone
 2. **Modo planeación con superpowers:** usa la skill **`brainstorming`** para esclarecer qué
    aporta el transcript y **diseñar** los cambios al PRD (qué secciones se tocan y por qué).
 3. **Propón el diff** del PRD (propuesta → revisión → confirmación). Si algo es ambiguo o
-   choca con lo ya escrito, pregunta antes de resolver. Solo tras aprobación, edita
-   `manager/PRD.md` (cambios mínimos y precisos; sube la **Versión** del encabezado).
-4. **Pon al corriente el Gantt:** una vez cerrado el PRD, invoca **`/pm-gantt`**, que usa la
-   skill **`writing-plans`** de superpowers para que el Gantt **jale los cambios del PRD**
-   (nuevas tareas/fases, alcance). Los ajustes finos (fechas, orden, duraciones) se revisan
-   contigo ahí, bajo propuesta → revisión → confirmación.
+   **choca con lo ya escrito**, NO lo resuelvas tú: **pregúntale al usuario con preguntas de
+   opción múltiple** (cada contradicción/decisión con sus opciones y una recomendación — ver
+   Reglas transversales). Solo tras aprobación, edita `manager/PRD.md` (cambios mínimos y
+   precisos; sube la **Versión** del encabezado).
+4. **Pon al corriente el Gantt (obligatorio, misma sesión):** una vez escrito el PRD, NO
+   cierres la sesión todavía. **Carga la skill `pm-ai:pm-gantt` con la herramienta `Skill`**
+   (no basta con mencionar `/pm-gantt`) y ejecútala: el Gantt se construye **en plan mode**
+   (`EnterPlanMode`) usando **`writing-plans`** de superpowers para que **jale los cambios del
+   PRD** (nuevas tareas/fases, alcance), y solo se escribe al aprobar el plan. Los ajustes
+   finos (fechas, orden, duraciones) se revisan contigo ahí, bajo propuesta → revisión →
+   confirmación. El PRD y el Gantt se actualizan **en la misma sesión**; si por alguna razón
+   no se puede actualizar el Gantt, díselo explícitamente al desarrollador (no lo omitas en
+   silencio).
 
 ## Flujo de ingesta — "ya tengo un PRD existente"
 
@@ -95,7 +144,8 @@ Es el camino habitual: integrar el feedback de un transcript nuevo al PRD y pone
    detecta secciones faltantes/incompletas, placeholders e inconsistencias. Cruza con los
    condensados de transcripts. Apóyate en **`brainstorming`** para esclarecer huecos.
 3. **Propón** el PRD normalizado y, para lo que ni el PRD ni los transcripts resuelvan,
-   **entrevista** con los bloques relevantes del prompt de Dani (solo lo que falte).
+   **entrevista** con los bloques relevantes del prompt de Dani (solo lo que falte). Ante
+   huecos o conflictos, **consulta con opción múltiple** (ver Reglas transversales), no asumas.
 4. Tras confirmación, escribe **`manager/PRD.md`**. Luego pon al corriente el Gantt
    (paso 4 del Flujo de edición).
 
@@ -112,7 +162,16 @@ Es el camino habitual: integrar el feedback de un transcript nuevo al PRD y pone
 4. Preséntalo para revisión; al confirmar, escribe **`manager/PRD.md`**. Luego pon al
    corriente el Gantt (paso 4 del Flujo de edición).
 
-## Cierre
+## Cierre (verificación explícita)
 
-Resume el PRD resultante en pocas líneas y confirma que el Gantt quedó al corriente. Recuerda
-cerrar el avance con **`/pm-commit`** para dejar git y el índice consistentes.
+Antes de dar por terminada la sesión, comprueba y reporta:
+
+1. **PRD escrito:** `manager/PRD.md` quedó guardado con la **Versión** del encabezado
+   incrementada respecto a la anterior.
+2. **Gantt al corriente:** el Gantt en la DB (`pm_gantt*`) y su reflejo en el tablero
+   (`manager/gantt/index.html`) reflejan los cambios del PRD
+   (se ejecutó la skill `pm-ai:pm-gantt` en esta misma sesión). Si no aplica o no se pudo,
+   regístralo con su razón en lugar de omitirlo.
+
+Resume el PRD resultante en pocas líneas. Recuerda cerrar el avance con **`/pm-commit`** para
+dejar git y el índice consistentes.

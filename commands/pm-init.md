@@ -26,7 +26,9 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
    - `mkdir -p manager`
    - `cp -R "${CLAUDE_PLUGIN_ROOT}/guias" manager/guias`
    - `cp -R "${CLAUDE_PLUGIN_ROOT}/gantt" manager/gantt`
-     (queda `manager/gantt/index.html` + `manager/gantt/gantt.js`).
+     (queda `manager/gantt/index.html` con los datos embebidos en `<script id="project-data">`,
+     reflejo de la DB; ya no hay `gantt.js`). El Gantt vive en la DB (`pm_gantt*`); `/pm-gantt`
+     lo gestiona y repinta el HTML.
    - `mkdir -p manager/traces && cp "${CLAUDE_PLUGIN_ROOT}/trace/trace.html" manager/traces/trace.html`
      (deja lista la **plantilla de bitácoras de traza**; `/pm-trace` generará al lado copias
      `trace_*.html` con los datos de cada reporte).
@@ -61,10 +63,11 @@ Crea la identidad que usarán `/pm-commit` y el indexador (si ya existe, respét
 1. Propón un `project_id` **determinista**: el nombre del repo en kebab-case (así un clon
    futuro vuelve a derivar el mismo id al re-inicializar). Propón también un `nombre`
    legible. Toma `repo_url` de `git remote get-url origin` (si hay).
-2. Pregunta la `unidad` de negocio como una **selección cerrada** entre estas cuatro
-   divisiones (no inventes ni aceptes otras): **Garantiplus**, **Gplus Seguros**,
-   **GoVirtual**, **EngineCX**. Si la diste en `$ARGUMENTS`, mapéala a una de las cuatro;
-   si no encaja en ninguna, vuelve a preguntar mostrando las opciones.
+2. Pregunta la `unidad` de negocio como una **selección cerrada** entre estas seis
+   divisiones (no inventes ni aceptes otras): **Go Virtual**, **Garantiplus México**,
+   **Garantiplus Colombia**, **Gplus Seguros**, **Invarat**, **EngineCX**. Si la diste en
+   `$ARGUMENTS`, mapéala a una de las seis; si no encaja en ninguna, vuelve a preguntar
+   mostrando las opciones.
 3. Tras confirmar, escribe `manager/config.json`:
    ```json
    { "project_id": "...", "nombre": "...", "unidad": "...", "repo_url": "..." }

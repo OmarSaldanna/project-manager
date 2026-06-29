@@ -25,7 +25,7 @@
 | **Campo** | **Detalle** |
 | --- | --- |
 | **Proyecto** | |
-| **Área / empresa** | (GarantiPlus México/Chile/Colombia, GPLUS Seguros, Invarat, Engine, Go Virtual) |
+| **Área / empresa** | (Go Virtual / Garantiplus México / Garantiplus Colombia / Gplus Seguros / Invarat / EngineCX) |
 | **Versión** | v0.1 |
 | **Fecha** | |
 | **Autores** | |
