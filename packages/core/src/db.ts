@@ -276,4 +276,56 @@ export class PmRepo {
     if (error) throw new Error(`entidadesDeCommit: ${error.message}`);
     return (data ?? []) as Partial<PmRow>[];
   }
+
+  /**
+   * Guarda (REEMPLAZA) el Gantt completo de un proyecto desde el JSON de gantt.js (RPC
+   * pm_gantt_guardar): upsert de cabecera + reemplazo total de tareas y objetivos, y reconcilia
+   * `empresa`→pm_projects.unidad. El % de avance NO se guarda (se deriva de los objetivos).
+   * `project` es el objeto `project` de gantt.js; `tasks` es `gantt.tasks` (con objetivos).
+   */
+  async guardarGantt(
+    projectId: string,
+    project: Record<string, unknown>,
+    tasks: unknown[],
+  ): Promise<{ project_id: string; tareas: number; objetivos: number }> {
+    const { data, error } = await this.sb.rpc("pm_gantt_guardar", {
+      p_project_id: projectId,
+      p_project: project,
+      p_tasks: tasks,
+    });
+    if (error) throw new Error(`guardarGantt: ${error.message}`);
+    return data as { project_id: string; tareas: number; objetivos: number };
+  }
+
+  /** Lee el Gantt de un proyecto con la forma de window.PROJECT_DATA (project + tasks con objetivos). */
+  async leerGantt(projectId: string): Promise<Record<string, unknown> | null> {
+    const { data, error } = await this.sb.rpc("pm_gantt_leer", { p_project_id: projectId });
+    if (error) throw new Error(`leerGantt: ${error.message}`);
+    return (data as Record<string, unknown> | null) ?? null;
+  }
+
+  /** Agrega o edita UN objetivo de una tarea (upsert por objetivo_id). `objetivo`: {id,titulo,descripcion?,planned?,finished?,orden?}. */
+  async guardarObjetivo(
+    projectId: string,
+    tareaId: string,
+    objetivo: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    const { data, error } = await this.sb.rpc("pm_gantt_objetivo_guardar", {
+      p_project_id: projectId,
+      p_tarea_id: tareaId,
+      p_objetivo: objetivo,
+    });
+    if (error) throw new Error(`guardarObjetivo: ${error.message}`);
+    return data as Record<string, unknown>;
+  }
+
+  /** Elimina UN objetivo por id (0 si no existía). */
+  async eliminarObjetivo(projectId: string, objetivoId: string): Promise<Record<string, unknown>> {
+    const { data, error } = await this.sb.rpc("pm_gantt_objetivo_eliminar", {
+      p_project_id: projectId,
+      p_objetivo_id: objetivoId,
+    });
+    if (error) throw new Error(`eliminarObjetivo: ${error.message}`);
+    return data as Record<string, unknown>;
+  }
 }

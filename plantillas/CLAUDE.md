@@ -14,9 +14,10 @@ repositorio completos** — navegas el índice (tools `pm_*`) y lees solo lo nec
   transcripts nuevos; si no, pregunta si partir de un PRD existente o crear uno nuevo. Define
   **qué** se construye y **por qué**. Procesa los transcripts en `manager/transcripts/`
   (originales) y `manager/transcripts-procesados/` (condensados).
-- **`/pm-gantt`** — gestiona la planeación en `manager/gantt/gantt.js`: el tablero de
-  tareas (línea de tiempo **con fechas** + avance), sprints y objetivos. Construye el Gantt
-  a partir del PRD usando la skill de planeación de superpowers; sirve para planear,
+- **`/pm-gantt`** — gestiona la planeación, que **vive en la DB** (`pm_gantt*`): tareas
+  (cronograma **por días hábiles**) y **objetivos que desglosan cada tarea** (el % de la tarea se
+  deriva de ellos). El dashboard `manager/gantt/index.html` **embebe una copia** de la DB.
+  Construye el Gantt a partir del PRD usando la skill de planeación de superpowers; sirve para planear,
   ajustar y registrar avances, y para visualizar el tablero (`manager/gantt/index.html`).
 - **`/pm-commit`** — cierra un avance: hace **commit(s) en git** e **indexa los cambios en
   la base de datos** (`pm_index`) aplicando el criterio de Entidades de Código. Es el flujo
@@ -38,7 +39,7 @@ manager/
 ├─ PRD.md                   # EL PRD del proyecto (único). Sigue la plantilla de Engine.
 ├─ transcripts/             # transcripts/documentos originales
 ├─ transcripts-procesados/  # condensados de cada transcript (insumo del PRD)
-├─ gantt/                   # tablero de planeación CON FECHAS (index.html + gantt.js)
+├─ gantt/                   # dashboard del Gantt (index.html con datos embebidos = reflejo de la DB)
 ├─ guias/                   # copia de las guías de la organización
 ├─ traces/                  # plantilla + bitácoras de traza generadas por /pm-trace
 └─ config.json              # identidad del proyecto (project_id, unidad, repo_url)
@@ -95,12 +96,18 @@ Qué contiene cada archivo (para que sepas cuál abrir):
 Antes de proponer un cambio de código, verifica contra la guía y reporta qué guías cumple
 (p. ej. "cumple `stack.md` y `gestion-paquetes.md`").
 
-## Tablero de planeación (`manager/gantt/gantt.js`)
+## Tablero de planeación (DB `pm_gantt*` → `manager/gantt/index.html`)
 
-Contiene `window.PROJECT_DATA`: la cabecera del proyecto, el **tablero de tareas**
-(`gantt.tasks`, con barras posicionadas por **fechas** `start`/`end` sobre un eje de meses,
-más su avance) y los **sprints con objetivos** (agrupación secundaria, marcables como
-completados). Gestiónalo con `/pm-gantt` y visualízalo abriendo `manager/gantt/index.html`.
+El Gantt **vive en la base de datos**: `pm_gantt` (cabecera), `pm_gantt_tarea` (tareas, por
+**fechas** `start`/`end` en días hábiles) y `pm_gantt_objetivo` (objetivos que **desglosan**
+cada tarea, con `planned`/`finished`). El **% de avance de la tarea se DERIVA** de sus objetivos
+terminados (vista `pm_gantt_tarea_avance`); `pm_gantt_resumen` da insights (hechos, atrasados,
+avance global). Todo cuelga del mismo `project_id` que el índice de código.
+
+El dashboard `manager/gantt/index.html` **embebe una copia** de esos datos en
+`<script id="project-data">window.PROJECT_DATA = {…}</script>` (reflejo de la DB; fines de
+semana rayados, línea vertical en el **día de hoy**, objetivos agrupados por tarea). Gestiónalo
+con `/pm-gantt`, que actualiza la DB y **repinta** el HTML.
 
 ## Protocolo de trabajo
 
@@ -108,7 +115,7 @@ Flujo SIEMPRE **propuesta → revisión → confirmación**. NUNCA cambies entre
 responsables, fechas comprometidas ni el alcance comprometido sin confirmación explícita.
 Cada decisión registrada lleva su razón (trazabilidad).
 
-**Con fechas:** la planeación (Gantt) usa **fechas reales** (`start`/`end` por tarea) y
-`ESTADO.md` puede referenciarlas. El cronograma detallado vive en el Gantt; el PRD define el
-QUÉ/POR QUÉ y los sprints son una agrupación secundaria. El Gantt se deriva del PRD usando la
-skill `writing-plans` de superpowers (y `brainstorming` para esclarecer alcance).
+**Con fechas (días hábiles):** la planeación (Gantt) usa **fechas reales** (`start`/`end` por
+tarea, estimadas en días hábiles L–V) y `ESTADO.md` puede referenciarlas. El cronograma vive en
+el Gantt; el PRD define el QUÉ/POR QUÉ. El Gantt se deriva del PRD usando la skill
+`writing-plans` de superpowers (y `brainstorming` para esclarecer alcance).
