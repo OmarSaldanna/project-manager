@@ -175,3 +175,12 @@ Antes de dar por terminada la sesión, comprueba y reporta:
 
 Resume el PRD resultante en pocas líneas. Recuerda cerrar el avance con **`/pm-commit`** para
 dejar git y el índice consistentes.
+
+## Publicación al repo central (enginecx_prd)
+
+Tras actualizar el PRD, refleja el estado y commitea en el repo central (usa `prd_dir` de
+`manager/config.json`):
+- `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`
+- `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" commit --dir "<prd_dir>" --message "feat(prd): <nombre> (<prd_dir>) — update PRD"`
+Luego **propón** el push y córrelo solo tras confirmación:
+`node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" push`.

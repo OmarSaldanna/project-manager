@@ -1,5 +1,5 @@
 ---
-description: "Inicializa PM·AI en este repo (nuevo o ya construido): copia CLAUDE.md, guías, tablero y plantilla de trazas a manager/, prepara .gitignore y hace el primer indexado completo del proyecto en la base de datos."
+description: "Inicializa PM·AI en este repo (nuevo o ya construido): copia CLAUDE.md, tablero y plantilla de trazas a manager/, prepara .gitignore y hace el primer indexado completo del proyecto en la base de datos."
 argument-hint: "[nombre o unidad del proyecto]"
 allowed-tools: Read, Write, Edit, Bash, mcp__pm-ai__pm_indexar, mcp__pm-ai__pm_proyectos
 ---
@@ -24,7 +24,6 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
      respetando `.gitignore` y para `/pm-commit` después.
 2. Crea `manager/` y copia desde el plugin (NO se edita su contenido):
    - `mkdir -p manager`
-   - `cp -R "${CLAUDE_PLUGIN_ROOT}/guias" manager/guias`
    - `cp -R "${CLAUDE_PLUGIN_ROOT}/gantt" manager/gantt`
      (queda `manager/gantt/index.html` con los datos embebidos en `<script id="project-data">`,
      reflejo de la DB; ya no hay `gantt.js`). El Gantt vive en la DB (`pm_gantt*`); `/pm-gantt`
@@ -38,12 +37,12 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
 3. Copia el `CLAUDE.md` oficial a la **raíz** del proyecto:
    - Si NO existe `./CLAUDE.md`: `cp "${CLAUDE_PLUGIN_ROOT}/plantillas/CLAUDE.md" ./CLAUDE.md`.
    - Si YA existe: NO lo sobrescribas. Muéstralo, explica que el oficial cubre los comandos
-     `pm_*` y las guías, y pregunta si reemplazar, fusionar o conservar el actual.
+     `pm_*`, y pregunta si reemplazar, fusionar o conservar el actual.
 
 ## Paso 2 — `.gitignore`
 
 **De `manager/` se versiona ÚNICAMENTE `manager/PRD.md`**; todo lo demás del directorio
-(guías, gantt, traces, transcripts, transcripts-procesados, config.json) es estado local y se
+(gantt, traces, transcripts, transcripts-procesados, config.json) es estado local y se
 **ignora**. El PRD es el único artefacto que debe quedar versionado y accesible en git.
 
 - Si no existe `.gitignore`, créalo. Si existe, **complétalo** (no lo reescribas).
@@ -72,6 +71,10 @@ Crea la identidad que usarán `/pm-commit` y el indexador (si ya existe, respét
    ```json
    { "project_id": "...", "nombre": "...", "unidad": "...", "repo_url": "..." }
    ```
+4. Asegura el repo central y resuelve la identidad PRD (id de 4 dígitos + carpeta por empresa):
+   - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" ensure-repo`
+   - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" resolve-id --project-id "<project_id>" --unidad "<unidad>" --config "manager/config.json"`
+     (esto agrega `prd_id` y `prd_dir` a `manager/config.json`).
 
 ## Paso 4 — Listado completo de archivos a procesar
 
@@ -153,3 +156,11 @@ SOLO tras el **sí explícito** del Paso 4.5, indexa el proyecto completo:
 - Sugiere los siguientes pasos: **`/pm-prd`** para el PRD, **`/pm-gantt`** para la
   planeación, **`/pm-commit`** para los avances posteriores y **`/pm-trace`** para generar
   bitácoras de la evolución del código.
+
+## Paso 7 — Publicar en el repo central de PRDs (enginecx_prd)
+
+1. Espeja `manager/` y commitea en el repo central (lee `prd_dir` de `manager/config.json`):
+   - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`
+   - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" commit --dir "<prd_dir>" --message "feat(prd): <nombre> (<prd_dir>) — init"`
+2. **Propón** el push (no automático): muestra qué se subirá y, **solo tras confirmación**, corre
+   `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" push`.
