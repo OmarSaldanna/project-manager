@@ -28,7 +28,7 @@ export function ensureRepo(repoDir: string, repoUrl: string, user: string, token
   if (existsSync(join(repoDir, ".git"))) {
     const actual = git(repoDir, ["remote", "get-url", "origin"]).trim();
     if (actual !== repoUrl) {
-      throw new Error(`enginecx_prd ya existe con otro remote: ${actual} (esperado ${repoUrl}).`);
+      throw new Error(`enginecx_prd ya existe con otro remote: ${redactarUrl(actual)} (esperado ${repoUrl}).`);
     }
     return;
   }
@@ -47,6 +47,9 @@ export function commitDir(
   user: string,
   email: string,
 ): boolean {
+  if (user.includes("=") || email.includes("=")) {
+    throw new Error(`user.name/user.email no pueden contener "=": user="${user}", email="${email}"`);
+  }
   git(repoDir, ["add", prdDir]);
   const pendiente = git(repoDir, ["status", "--porcelain"]).trim();
   if (!pendiente) return false;
