@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 /** Mapa cerrado unidad (config.json) → empresa (sufijo de carpeta). */
-const EMPRESA_POR_UNIDAD: Record<string, string> = {
+const EMPRESA_POR_UNIDAD: Record<string, string | undefined> = {
   "Go Virtual": "govirtual",
   "Gplus Seguros": "gplusseguros",
   "Invarat": "invarat",
