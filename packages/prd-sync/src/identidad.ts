@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
 
+/** sha256(input) como entero (bigint). Base común para id y sondeo. */
+function sha256BigInt(input: string): bigint {
+  return BigInt("0x" + createHash("sha256").update(input).digest("hex"));
+}
+
 /** Mapa cerrado unidad (config.json) → empresa (sufijo de carpeta). */
 const EMPRESA_POR_UNIDAD: Record<string, string | undefined> = {
   "Go Virtual": "govirtual",
@@ -23,8 +28,7 @@ export function mapearEmpresa(unidad: string): string {
 
 /** id determinista de 4 dígitos derivado del project_id (sha256 % 10000). */
 export function calcularPrdId(projectId: string): string {
-  const hex = createHash("sha256").update(projectId).digest("hex");
-  return (BigInt("0x" + hex) % 10000n).toString().padStart(4, "0");
+  return (sha256BigInt(projectId) % 10000n).toString().padStart(4, "0");
 }
 
 /** Nombre de carpeta destino: `{prd_id}_{empresa}`. */
@@ -43,7 +47,7 @@ export function resolverPrdDir(
   dueñoDe: (prdDir: string) => string | null,
 ): { prdId: string; prdDir: string } {
   const empresa = mapearEmpresa(unidad);
-  const base = BigInt("0x" + createHash("sha256").update(projectId).digest("hex"));
+  const base = sha256BigInt(projectId);
   for (let i = 0n; i < 10000n; i++) {
     const prdId = ((base + i) % 10000n).toString().padStart(4, "0");
     const prdDir = construirPrdDir(prdId, empresa);
