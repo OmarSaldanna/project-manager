@@ -31,3 +31,26 @@ export function calcularPrdId(projectId: string): string {
 export function construirPrdDir(prdId: string, empresa: string): string {
   return `${prdId}_${empresa}`;
 }
+
+/**
+ * Resuelve el `prd_dir` libre para un proyecto. Empieza en el id base (sha256 % 10000)
+ * y sondea linealmente hasta hallar un dir libre o ya propio. `dueñoDe(dir)` informa qué
+ * project_id ocupa cada dir candidato (o null si está libre).
+ */
+export function resolverPrdDir(
+  projectId: string,
+  unidad: string,
+  dueñoDe: (prdDir: string) => string | null,
+): { prdId: string; prdDir: string } {
+  const empresa = mapearEmpresa(unidad);
+  const base = BigInt("0x" + createHash("sha256").update(projectId).digest("hex"));
+  for (let i = 0n; i < 10000n; i++) {
+    const prdId = ((base + i) % 10000n).toString().padStart(4, "0");
+    const prdDir = construirPrdDir(prdId, empresa);
+    const dueño = dueñoDe(prdDir);
+    if (dueño === null || dueño === projectId) {
+      return { prdId, prdDir };
+    }
+  }
+  throw new Error("Sin ids de 4 dígitos disponibles para esta empresa (10000 ocupados).");
+}
