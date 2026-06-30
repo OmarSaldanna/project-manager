@@ -10,6 +10,7 @@ export interface ProjectConfig {
   prd_dir?: string;
 }
 
+/** Lee y parsea el config.json. Lanza si la ruta no existe o el JSON es inválido (la ruta la controla el llamador). */
 export function leerConfig(ruta: string): ProjectConfig {
   return JSON.parse(readFileSync(ruta, "utf8")) as ProjectConfig;
 }

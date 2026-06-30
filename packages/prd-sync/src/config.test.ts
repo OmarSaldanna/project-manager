@@ -29,4 +29,11 @@ describe("dueñoDePrdDir", () => {
   it("devuelve null si el dir no existe", () => {
     expect(dueñoDePrdDir(raiz, "9999_invarat")).toBeNull();
   });
+
+  it("devuelve null si el config.json está corrupto", () => {
+    const dir = join(raiz, "bad_dir");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "config.json"), "{ not json }");
+    expect(dueñoDePrdDir(raiz, "bad_dir")).toBeNull();
+  });
 });
