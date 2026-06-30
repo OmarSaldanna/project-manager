@@ -9,7 +9,9 @@ import { cargarEnv, pluginRoot } from "./env.js";
 /** Lee el valor de una bandera `--nombre valor` de los args restantes. */
 function flag(rest: string[], name: string): string | undefined {
   const i = rest.indexOf(name);
-  return i >= 0 ? rest[i + 1] : undefined;
+  if (i < 0) return undefined;
+  const v = rest[i + 1];
+  return v !== undefined && !v.startsWith("--") ? v : undefined;
 }
 
 function requerido(rest: string[], name: string): string {
@@ -24,11 +26,11 @@ function enginecxPrdDir(): string {
 
 function main(): void {
   const [, , sub, ...rest] = process.argv;
-  const env = cargarEnv();
   const repoDir = enginecxPrdDir();
 
   switch (sub) {
     case "ensure-repo": {
+      const env = cargarEnv();
       if (!env.repo) throw new Error("Falta ENGINECX_PRD_REPO en .env");
       ensureRepo(repoDir, env.repo, env.user, env.token);
       console.log(`enginecx_prd listo (${redactarUrl(construirUrlAutenticada(env.repo, env.user, "•"))}).`);
@@ -51,6 +53,7 @@ function main(): void {
       break;
     }
     case "commit": {
+      const env = cargarEnv();
       const dir = requerido(rest, "--dir");
       const message = requerido(rest, "--message");
       const hubo = commitDir(repoDir, dir, message, env.user, env.email);
@@ -58,6 +61,7 @@ function main(): void {
       break;
     }
     case "push": {
+      const env = cargarEnv();
       if (!env.repo) throw new Error("Falta ENGINECX_PRD_REPO en .env");
       pushRepo(repoDir, env.repo, env.user, env.token);
       console.log("Push a enginecx_prd hecho.");
@@ -69,4 +73,9 @@ function main(): void {
   }
 }
 
-main();
+try {
+  main();
+} catch (e) {
+  console.error((e as Error).message);
+  process.exit(1);
+}
