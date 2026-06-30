@@ -19,6 +19,17 @@ function git(repoDir: string, args: string[]): string {
   return execFileSync("git", ["-C", repoDir, ...args], { encoding: "utf8" });
 }
 
+/** git con URL autenticada: captura stderr y lo redacta si falla, para nunca filtrar el token. */
+function gitAuth(args: string[]): void {
+  try {
+    execFileSync("git", args, { stdio: ["ignore", "ignore", "pipe"] });
+  } catch (e) {
+    const err = e as { stderr?: Buffer | string; message?: string };
+    const raw = err.stderr != null ? err.stderr.toString() : (err.message ?? "");
+    throw new Error(`git falló: ${redactarUrl(raw)}`);
+  }
+}
+
 /**
  * Garantiza que `repoDir` sea un clon válido de `repoUrl`. Si falta el repo, clona con la
  * URL autenticada y luego resetea el remote a la URL LIMPIA (sin token). Si ya existe con
@@ -34,7 +45,7 @@ export function ensureRepo(repoDir: string, repoUrl: string, user: string, token
   }
   if (!token) throw new Error("Falta ENGINECX_PRD_GIT_TOKEN en .env para clonar el repo central.");
   const authUrl = construirUrlAutenticada(repoUrl, user, token);
-  execFileSync("git", ["clone", authUrl, repoDir], { stdio: "inherit" });
+  gitAuth(["clone", authUrl, repoDir]);
   // No dejar el token en .git/config:
   git(repoDir, ["remote", "set-url", "origin", repoUrl]);
 }
@@ -47,8 +58,8 @@ export function commitDir(
   user: string,
   email: string,
 ): boolean {
-  if (user.includes("=") || email.includes("=")) {
-    throw new Error(`user.name/user.email no pueden contener "=": user="${user}", email="${email}"`);
+  if (!user || !email || user.includes("=") || email.includes("=")) {
+    throw new Error(`user.name/user.email inválidos (vacíos o con "="): user="${user}", email="${email}"`);
   }
   git(repoDir, ["add", prdDir]);
   const pendiente = git(repoDir, ["status", "--porcelain"]).trim();
@@ -71,6 +82,6 @@ export function pushRepo(
 ): void {
   if (!token) throw new Error("Falta ENGINECX_PRD_GIT_TOKEN en .env para pushear.");
   const authUrl = construirUrlAutenticada(repoUrl, user, token);
-  git(repoDir, ["pull", "--rebase", authUrl, branch]);
-  git(repoDir, ["push", authUrl, `HEAD:${branch}`]);
+  gitAuth(["-C", repoDir, "pull", "--rebase", authUrl, branch]);
+  gitAuth(["-C", repoDir, "push", authUrl, `HEAD:${branch}`]);
 }

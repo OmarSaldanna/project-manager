@@ -95,4 +95,4 @@ Tras indexar y commitear el código, refleja `manager/` y commitea en el repo ce
 `prd_dir` de `manager/config.json`):
 - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`
 - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" commit --dir "<prd_dir>" --message "chore(prd): <nombre> (<prd_dir>) — sync estado"`
-**Propón** el push y córrelo solo tras confirmación: `... push`.
+**Propón** el push y córrelo solo tras confirmación: `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" push`.
