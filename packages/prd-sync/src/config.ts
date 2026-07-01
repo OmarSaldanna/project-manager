@@ -1,10 +1,9 @@
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, writeFileSync } from "node:fs";
 
 export interface ProjectConfig {
   project_id: string;
-  nombre: string;
   unidad: string;
+  sistema?: string;
   prd_id?: string;
   prd_dir?: string;
 }
@@ -14,21 +13,19 @@ export function leerConfig(ruta: string): ProjectConfig {
   return JSON.parse(readFileSync(ruta, "utf8")) as ProjectConfig;
 }
 
-/** Persiste prd_id/prd_dir en el config, conservando el resto y el formato (2 espacios). */
-export function escribirIdentidadPrd(ruta: string, prdId: string, prdDir: string): void {
+/**
+ * Persiste la identidad de carpeta PRD en el config.json, conservando el resto de claves y el
+ * formato (2 espacios + salto final). `sistema` y `project_id` deben existir ya en el config;
+ * aquí solo se agregan los derivados:
+ * - `prd_id`  → hash de 4 dígitos del `project_id`
+ * - `prd_dir` → ruta relativa en enginecx_prd: `{sistema}/PJ{prd_id}-{project_id}`
+ */
+export function escribirIdentidadPrd(
+  ruta: string,
+  datos: { prdId: string; prdDir: string },
+): void {
   const cfg = leerConfig(ruta);
-  cfg.prd_id = prdId;
-  cfg.prd_dir = prdDir;
+  cfg.prd_id = datos.prdId;
+  cfg.prd_dir = datos.prdDir;
   writeFileSync(ruta, JSON.stringify(cfg, null, 2) + "\n");
-}
-
-/** project_id que ocupa `enginecx_prd/<prdDir>/config.json`, o null si no existe/ilegible. */
-export function dueñoDePrdDir(enginecxPrdDir: string, prdDir: string): string | null {
-  const cfg = join(enginecxPrdDir, prdDir, "config.json");
-  if (!existsSync(cfg)) return null;
-  try {
-    return (JSON.parse(readFileSync(cfg, "utf8")) as ProjectConfig).project_id ?? null;
-  } catch {
-    return null;
-  }
 }

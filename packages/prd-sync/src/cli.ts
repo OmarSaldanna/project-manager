@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { resolverPrdDir } from "./identidad.js";
 import { espejar } from "./mirror.js";
 import { ensureRepo, commitDir, pushRepo, redactarUrl, construirUrlAutenticada } from "./git.js";
-import { escribirIdentidadPrd, dueñoDePrdDir } from "./config.js";
+import { escribirIdentidadPrd, leerConfig } from "./config.js";
 import { cargarEnv, pluginRoot } from "./env.js";
 
 /** Lee el valor de una bandera `--nombre valor` de los args restantes. */
@@ -37,11 +37,11 @@ function main(): void {
       break;
     }
     case "resolve-id": {
-      const projectId = requerido(rest, "--project-id");
-      const unidad = requerido(rest, "--unidad");
       const config = requerido(rest, "--config");
-      const { prdId, prdDir } = resolverPrdDir(projectId, unidad, (d) => dueñoDePrdDir(repoDir, d));
-      escribirIdentidadPrd(config, prdId, prdDir);
+      const cfg = leerConfig(config);
+      if (!cfg.sistema) throw new Error("config.json necesita 'sistema' (y 'project_id') antes de resolve-id");
+      const { prdId, prdDir } = resolverPrdDir(cfg.sistema, cfg.project_id);
+      escribirIdentidadPrd(config, { prdId, prdDir });
       console.log(prdDir);
       break;
     }

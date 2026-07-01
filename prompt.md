@@ -160,7 +160,7 @@ pm-ai/                              # repositorio del plugin (versionado en GitH
 > - `PRD.md` — el **PRD** (único por proyecto), siguiendo la estructura de Engine. Qué se construye y por qué.
 > - `gantt/` — el **plan de desarrollo con fechas** (Gantt). Cómo se descompone y ejecuta; se deriva del PRD con la skill de planeación de superpowers (documento **distinto** del PRD).
 > - `transcripts/` — transcripts/documentos **originales** de reuniones asociados al proyecto.
-> - `transcripts-procesados/` — **condensados** de cada transcript (solo lo relevante para el PRD).
+> - `transcripts-resumidos/` — **condensados** de cada transcript (solo lo relevante para el PRD).
 > - `ESTADO.md` — estado vivo del proyecto (§9).
 > - `code-map.md` — brújula del repo.
 > - `updates/` — updates manuales del PM.

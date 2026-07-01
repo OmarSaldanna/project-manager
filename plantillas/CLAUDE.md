@@ -13,7 +13,7 @@ repositorio completos** — navegas el índice (tools `pm_*`) y lees solo lo nec
   siguiendo los prompts de Engine: si ya existe lo continúa integrando el feedback de
   transcripts nuevos; si no, pregunta si partir de un PRD existente o crear uno nuevo. Define
   **qué** se construye y **por qué**. Procesa los transcripts en `manager/transcripts/`
-  (originales) y `manager/transcripts-procesados/` (condensados).
+  (originales) y `manager/transcripts-resumidos/` (condensados).
 - **`/pm-gantt`** — gestiona la planeación, que **vive en la DB** (`pm_gantt*`): tareas
   (cronograma **por días hábiles**) y **objetivos que desglosan cada tarea** (el % de la tarea se
   deriva de ellos). El dashboard `manager/gantt/index.html` **embebe una copia** de la DB.
@@ -38,10 +38,10 @@ accesible también en Windows):
 manager/
 ├─ PRD.md                   # EL PRD del proyecto (único). Sigue la plantilla de Engine.
 ├─ transcripts/             # transcripts/documentos originales
-├─ transcripts-procesados/  # condensados de cada transcript (insumo del PRD)
+├─ transcripts-resumidos/   # condensados de cada transcript (insumo del PRD)
 ├─ gantt/                   # dashboard del Gantt (index.html con datos embebidos = reflejo de la DB)
 ├─ traces/                  # plantilla + bitácoras de traza generadas por /pm-trace
-└─ config.json              # identidad del proyecto (nombre, unidad, project_id, prd_id, prd_dir)
+└─ config.json              # identidad del proyecto (project_id, unidad, sistema, prd_id, prd_dir)
 ```
 
 **Versionado:** de `manager/` git versiona **únicamente `manager/PRD.md`**; el resto es
@@ -50,12 +50,33 @@ estado local y está ignorado (`manager/*` + `!manager/PRD.md` en `.gitignore`).
 
 ## Identidad del proyecto (`manager/config.json`) — FUENTE ÚNICA
 
-La metadata del proyecto — `nombre`, `unidad` (empresa), `project_id`, `prd_id`,
-`prd_dir` y datos semejantes (p. ej. responsable) — vive SIEMPRE en `manager/config.json` (lo
-construye `/pm-init`). Antes de pedirle CUALQUIERA de estos datos al usuario, **léelos de
-`manager/config.json`**; nunca vuelvas a preguntar lo que ya está ahí. Solo pregunta si el dato
-**falta** en el archivo y, tras confirmarlo, **persístelo en `config.json`** (no lo dejes solo en
-la conversación) para que siga siendo la fuente única la próxima vez.
+Toda la metadata del proyecto vive SIEMPRE en `manager/config.json` (lo construye `/pm-init`).
+Antes de pedirle CUALQUIERA de estos datos al usuario, **léelos de ahí**; nunca vuelvas a
+preguntar lo que ya está. Solo pregunta si el dato **falta** y, tras confirmarlo, **persístelo
+en `config.json`** (no lo dejes solo en la conversación).
+
+**Manifiesto de `manager/config.json`:**
+
+```json
+{
+  "project_id": "nuevos-endpoints",
+  "unidad": "EngineCX",
+  "sistema": "SIGA",
+  "prd_id": "8145",
+  "prd_dir": "SIGA/PJ8145-nuevos-endpoints"
+}
+```
+
+| Campo | Qué es |
+|---|---|
+| `project_id` | nombre del **desarrollo** (mini-proyecto de cambios), en **slug** (minúsculas-guiones, sin espacios). Identidad para el índice de código y base del folder inferior. |
+| `unidad` | división de negocio (una de las siete). Metadata; **no** forma parte del folder de `enginecx_prd`. |
+| `sistema` | sistema/proyecto de la **empresa** (SIGA, Alfa, Omega, Autoexplora…). Folder **superior** en `enginecx_prd`. |
+| `prd_id` | hash de 4 dígitos del `project_id` (lo calcula `resolve-id`). |
+| `prd_dir` | ruta en `enginecx_prd`: `{sistema}/PJ{prd_id}-{project_id}` (lo calcula `resolve-id`). |
+
+`project_id`, `unidad` y `sistema` los recolecta `/pm-init`; `prd_id` y `prd_dir` los agrega
+`resolve-id`. No hay `nombre` ni `entregable` ni `repo_url`.
 
 ## Repo central de PRDs (`enginecx_prd`) — identidad git del `.env`
 

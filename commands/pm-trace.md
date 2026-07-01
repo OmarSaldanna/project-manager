@@ -20,7 +20,7 @@ Petición del desarrollador (puede venir vacía): **$ARGUMENTS**
 
 ## Paso 0 — Identidad del proyecto (`manager/config.json`)
 
-1. Lee `manager/config.json` para obtener `project_id` (y `nombre`). Es lo que creó `/pm-init`.
+1. Lee `manager/config.json` para obtener `project_id`. Es lo que creó `/pm-init`.
 2. Si no existe, infiérelo igual que `/pm-commit` (raíz del repo, nombre de carpeta) y
    confírmalo antes de continuar.
 

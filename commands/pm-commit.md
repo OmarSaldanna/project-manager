@@ -21,20 +21,22 @@ Contexto que aporta el desarrollador (puede venir vacío): **$ARGUMENTS**
 
 ## Paso 0 — Identidad del proyecto (`manager/config.json`)
 
-1. Lee `manager/config.json`. Debe contener: `project_id`, `nombre`, `unidad`.
+1. Lee `manager/config.json`. Debe contener: `project_id`, `unidad` (y, si ya se inicializó,
+   `sistema`, `prd_id`, `prd_dir`).
 2. **Si no existe** (lo normal es que `/pm-init` ya lo haya creado):
    - Infiere candidatos: `git rev-parse --show-toplevel` (raíz) y el nombre de la carpeta del
      repo.
-   - **Propón** `project_id` (un slug estable y **determinista**: el nombre del repo en
-     kebab-case), `nombre` legible y pregunta la `unidad` con el **mismo selector de dos pasos
-     de `/pm-init`** (no texto libre). Unidades válidas (no inventes ni aceptes otras):
+   - **Propón** `project_id` (slug del desarrollo, minúsculas-guiones) y pregunta la `unidad`
+     con el **mismo selector de dos pasos de `/pm-init`** (no texto libre). Lo ideal es correr
+     `/pm-init`. Unidades válidas (no inventes ni aceptes otras):
      **EngineCX**, **Garantiplus Chile**, **Garantiplus Colombia**, **Garantiplus México**,
      **Go Virtual**, **Invarat**, **Gplus Seguros**.
    - Tras confirmar, crea `manager/config.json`. Nota: `manager/` está en `.gitignore`,
      así que es local; por eso el `project_id` se deriva de forma determinista (un clon que
      re-inicialice obtiene el mismo id).
-3. Usa siempre `project_id` (+ `nombre`/`unidad`) de este archivo en `pm_indexar`; `repo_url`
-   se obtiene de `git remote get-url origin` (opcional — ya no vive en `config.json`).
+3. Usa siempre `project_id` (+ `unidad`) de este archivo en `pm_indexar` (`nombre` opcional =
+   `project_id`); `repo_url` se obtiene de `git remote get-url origin` (opcional — ya no vive
+   en `config.json`).
 
 ## Paso 1 — Reporte de cambios y acuerdo de archivos
 
@@ -71,8 +73,8 @@ Contexto que aporta el desarrollador (puede venir vacío): **$ARGUMENTS**
 ## Paso 3 — Indexación en la base de datos
 
 Para **cada commit** realizado, llama a `pm_indexar` con:
-- `project_id`, `nombre`, `unidad` → de `manager/config.json`; `repo_url` → de
-  `git remote get-url origin` (si hay; opcional).
+- `project_id`, `unidad` → de `manager/config.json` (`nombre` opcional = `project_id`);
+  `repo_url` → de `git remote get-url origin` (si hay; opcional).
 - `repo_root` → la raíz absoluta del repo (Paso 1).
 - `commit_sha` → el sha de ESE commit; `created_at` → su fecha ISO.
 - `files` → los archivos de ESE commit (ruta relativa). Marca `deleted: true` para los

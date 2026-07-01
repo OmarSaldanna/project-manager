@@ -31,7 +31,7 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
    - `mkdir -p manager/traces && cp "${CLAUDE_PLUGIN_ROOT}/trace/trace.html" manager/traces/trace.html`
      (deja lista la **plantilla de bitácoras de traza**; `/pm-trace` generará al lado copias
      `trace_*.html` con los datos de cada reporte).
-   - `mkdir -p manager/transcripts manager/transcripts-procesados`
+   - `mkdir -p manager/transcripts manager/transcripts-resumidos`
      (carpetas de la función de PRD: los **transcripts originales** y sus **condensados**; el
      **PRD** vive como archivo único `manager/PRD.md`. Las llena `/pm-prd`).
 3. Copia el `CLAUDE.md` oficial a la **raíz** del proyecto:
@@ -42,7 +42,7 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
 ## Paso 2 — `.gitignore`
 
 **De `manager/` se versiona ÚNICAMENTE `manager/PRD.md`**; todo lo demás del directorio
-(gantt, traces, transcripts, transcripts-procesados, config.json) es estado local y se
+(gantt, traces, transcripts, transcripts-resumidos, config.json) es estado local y se
 **ignora**. El PRD es el único artefacto que debe quedar versionado y accesible en git.
 
 - Si no existe `.gitignore`, créalo. Si existe, **complétalo** (no lo reescribas).
@@ -57,37 +57,65 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
 
 ## Paso 3 — Identidad del proyecto (`manager/config.json`)
 
-Crea la identidad que usarán `/pm-commit` y el indexador (si ya existe, respétala):
+Al iniciar, recolecta la identidad con estas preguntas **en este orden** (una a la vez).
+Si `manager/config.json` ya existe con estos campos, **respétalos y NO re-preguntes** (FUENTE
+ÚNICA); solo pregunta lo que falte.
 
-1. Propón un `project_id` **determinista**: el nombre del repo en kebab-case (así un clon
-   futuro vuelve a derivar el mismo id al re-inicializar). Propón también un `nombre`
-   legible.
-2. Pregunta la `unidad` de negocio **SIEMPRE con un selector** (AskUserQuestion), nunca como
-   texto libre ni pidiendo que la escriba. Como el selector admite **máximo 4 opciones**, usa
-   un **selector de DOS PASOS** (todo elegible **sin teclear**):
-   - **Paso A** (selector, en ESTE orden exacto): `EngineCX`, `Garantiplus`, `Go Virtual`,
+1. **Unidad de negocio** — **SIEMPRE con un selector** (AskUserQuestion), nunca texto libre.
+   Como el selector admite máx. 4 opciones y son siete unidades, usa un **selector de DOS PASOS**:
+   - **Paso A** (en ESTE orden exacto): `EngineCX`, `Garantiplus`, `Go Virtual`,
      `Invarat / Gplus Seguros`.
-   - **Paso B** (segundo selector, SOLO si hace falta desambiguar):
-     - Si eligió **Garantiplus** → selector `Garantiplus Chile` / `Garantiplus Colombia` /
-       `Garantiplus México`.
-     - Si eligió **Invarat / Gplus Seguros** → selector `Invarat` / `Gplus Seguros`.
-     - `EngineCX` y `Go Virtual` se resuelven en el Paso A (sin Paso B).
-   - El valor final que guardas en `config.json.unidad` debe ser **una de estas exactas**:
-     `EngineCX`, `Garantiplus Chile`, `Garantiplus Colombia`, `Garantiplus México`,
-     `Go Virtual`, `Invarat`, `Gplus Seguros`.
-   - **Empresa (sufijo del folder):** las **tres Garantiplus** (Chile, Colombia, México)
-     **colapsan** al sufijo `garantiplus` en el `prd_dir` (`{id}_{empresa}`); el resto mapea
-     1-a-1. Ese colapso lo hace `prd-sync` (`resolve-id`); tú solo guardas la `unidad` exacta.
-   - Si la `unidad` ya vino en `$ARGUMENTS` o ya está en `manager/config.json`, mapéala directo
-     y **no preguntes** (ver "Identidad del proyecto — FUENTE ÚNICA").
-3. Tras confirmar, escribe `manager/config.json`:
+   - **Paso B** (solo si hace falta desambiguar):
+     - `Garantiplus` → `Garantiplus Chile` / `Garantiplus Colombia` / `Garantiplus México`.
+     - `Invarat / Gplus Seguros` → `Invarat` / `Gplus Seguros`.
+     - `EngineCX` y `Go Virtual` se resuelven en el Paso A.
+   - Valor final (`config.json.unidad`), una de estas exactas: `EngineCX`, `Garantiplus Chile`,
+     `Garantiplus Colombia`, `Garantiplus México`, `Go Virtual`, `Invarat`, `Gplus Seguros`.
+     Es **metadata** (la usa el índice de código); **no** forma parte del folder de `enginecx_prd`.
+
+2. **Nombre del sistema** — con un **INPUT de texto** (NO selector). Pregunta literal:
+   > «¿A qué proyecto de la empresa corresponde este desarrollo? (por ejemplo: SIGA, Alfa,
+   > Omega, Autoexplora, …)»
+
+   Es el `sistema` = folder **SUPERIOR** de `enginecx_prd`. No puede contener `/`.
+
+3. **Nombre del desarrollo** — con un **INPUT de texto** (NO selector). Pregunta literal:
+   > «¿Cómo le llamaremos a este desarrollo? (por ejemplo: nuevos-endpoints, cambios-landing,
+   > cambio-endpoints, …)»
+
+   Este es el `project_id` = folder **INFERIOR** (el "mini-proyecto" de los cambios) y lo que se
+   hashea para el id. **NORMALÍZALO a slug**: minúsculas, guiones, sin espacios ni acentos
+   (p. ej. «Nuevos Endpoints» → `nuevos-endpoints`); debe cumplir `^[a-z0-9]+(-[a-z0-9]+)*$`.
+
+4. **Confirmación (OBLIGATORIA).** Hazlo en DOS partes:
+   1. **En un mensaje normal** (NO dentro del selector) muestra la tabla con lo recolectado —
+      así se renderiza como tabla de verdad. **NUNCA** metas la tabla en el texto del selector
+      (ahí sale en crudo, con `|` y `---`):
+
+      | Campo | Valor |
+      |---|---|
+      | Unidad de negocio | `<unidad>` |
+      | Sistema (proyecto de la empresa) | `<sistema>` |
+      | Nombre del desarrollo (`project_id`) | `<project_id>` |
+
+   2. **Luego** llama al **selector** (AskUserQuestion) con una pregunta **corta** (p. ej.
+      «¿Apruebas el init con estos datos?») y EXACTAMENTE estas dos opciones: **«Aprobar el
+      init»** y **«Chat about this»**. Solo con «Aprobar el init» continúas; con «Chat about
+      this» abres conversación para ajustar y vuelves a mostrar la tabla.
+
+   **NO** escribas `config.json` ni indexes nada antes de la aprobación.
+
+5. Tras la aprobación, escribe `manager/config.json` (si ya existía, respétalo):
    ```json
-   { "project_id": "...", "nombre": "...", "unidad": "..." }
+   { "project_id": "...", "unidad": "...", "sistema": "..." }
    ```
-4. Asegura el repo central y resuelve la identidad PRD (id de 4 dígitos + carpeta por empresa):
+   y resuelve/persiste la identidad de carpeta PRD:
    - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" ensure-repo`
-   - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" resolve-id --project-id "<project_id>" --unidad "<unidad>" --config "manager/config.json"`
-     (esto agrega `prd_id` y `prd_dir` a `manager/config.json`).
+   - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" resolve-id --config "manager/config.json"`
+     (lee `sistema` + `project_id` del config y agrega `prd_id` = hash 4 díg del `project_id` y
+     `prd_dir` = `{sistema}/PJ{prd_id}-{project_id}`). La carpeta final es
+     `enginecx_prd/{sistema}/PJ{prd_id}-{project_id}/`, cuyo folder inferior es la liga/espejo de
+     `manager/`.
 
 ## Paso 4 — Listado completo de archivos a procesar
 
@@ -156,8 +184,8 @@ SOLO tras el **sí explícito** del Paso 4.5, indexa el proyecto completo:
 1. Determina el commit: `git rev-parse HEAD` (si hay historia; si no, usa `initial`) y la
    fecha `git show -s --format=%cI HEAD` (si no hay, la fecha de hoy).
 2. Llama a `pm_indexar` con:
-   - `project_id`, `nombre`, `unidad` → de `manager/config.json`; `repo_url` → de
-     `git remote get-url origin` (si hay; opcional — ya no vive en `config.json`).
+   - `project_id`, `unidad` → de `manager/config.json` (`nombre` opcional = `project_id`);
+     `repo_url` → de `git remote get-url origin` (si hay; opcional — ya no vive en `config.json`).
    - `repo_root` → la raíz absoluta del repo.
    - `commit_sha` y `created_at` → del paso anterior.
    - `files` → la lista indexable acordada (todas como altas; sin `deleted`).

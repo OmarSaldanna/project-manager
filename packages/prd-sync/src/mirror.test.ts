@@ -33,4 +33,13 @@ describe("espejar", () => {
   it("lanza si el origen no existe", () => {
     expect(() => espejar(join(raiz, "noexiste"), join(raiz, "dest"))).toThrow();
   });
+
+  it("crea el folder superior si el destino es anidado ({sistema}/PJ...)", () => {
+    const src = join(raiz, "src");
+    mkdirSync(src, { recursive: true });
+    writeFileSync(join(src, "PRD.md"), "x");
+    const dest = join(raiz, "SIGA", "PJ0042-nuevo-endpoint"); // el padre SIGA/ no existe aún
+    espejar(src, dest);
+    expect(readFileSync(join(dest, "PRD.md"), "utf8")).toBe("x");
+  });
 });

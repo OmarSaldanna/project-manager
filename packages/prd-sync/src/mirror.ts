@@ -1,4 +1,5 @@
-import { rmSync, cpSync, existsSync } from "node:fs";
+import { rmSync, cpSync, existsSync, mkdirSync } from "node:fs";
+import { dirname } from "node:path";
 
 /**
  * Espejo unidireccional: deja `dest` idéntico a `src` (copia recursiva + borrado de
@@ -14,5 +15,6 @@ export function espejar(src: string, dest: string): void {
     throw new Error(`No existe el origen a espejar: ${src}`);
   }
   rmSync(dest, { recursive: true, force: true });
+  mkdirSync(dirname(dest), { recursive: true }); // asegura el folder superior ({sistema}/)
   cpSync(src, dest, { recursive: true });
 }

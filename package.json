@@ -1,6 +1,6 @@
 {
   "name": "pm-ai",
-  "version": "0.5.6",
+  "version": "0.5.10",
   "private": true,
   "description": "PM·AI — Asistente de Project Manager con RAG e índice simbólico de código (Engine CX)",
   "type": "module",

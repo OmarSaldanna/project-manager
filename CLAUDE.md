@@ -10,8 +10,9 @@ ni repositorios completos** — navegas el índice (tools `pm_*`) y lees solo lo
 3. Lee SOLO ese archivo/sección. `pm_traza` para historia de un símbolo.
 
 ## Identidad del proyecto (`manager/config.json`) — FUENTE ÚNICA
-La metadata del proyecto — `nombre`, `unidad` (empresa), `project_id`, `prd_id`,
-`prd_dir` y datos semejantes (p. ej. responsable) — vive SIEMPRE en `manager/config.json` (lo
+La metadata del proyecto — `project_id` (nombre del desarrollo, en slug), `unidad`, `sistema`
+(sistema/proyecto de la empresa), `prd_id`, `prd_dir` y datos semejantes — vive SIEMPRE en
+`manager/config.json` (lo
 construye `/pm-init`). Antes de pedirle CUALQUIERA de estos datos al usuario, **léelos de
 `manager/config.json`**; nunca vuelvas a preguntar lo que ya está ahí. Solo pregunta si el dato
 **falta** en el archivo y, tras confirmarlo, **persístelo en `config.json`** (no lo dejes solo en

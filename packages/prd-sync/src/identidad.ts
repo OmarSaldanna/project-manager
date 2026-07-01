@@ -1,61 +1,40 @@
 import { createHash } from "node:crypto";
 
-/** sha256(input) como entero (bigint). Base común para id y sondeo. */
+/** sha256(input) como entero (bigint). */
 function sha256BigInt(input: string): bigint {
   return BigInt("0x" + createHash("sha256").update(input).digest("hex"));
 }
 
-/** Mapa cerrado unidad (config.json) → empresa (sufijo de carpeta). */
-const EMPRESA_POR_UNIDAD: Record<string, string | undefined> = {
-  "Go Virtual": "govirtual",
-  "Gplus Seguros": "gplusseguros",
-  "Invarat": "invarat",
-  "EngineCX": "enginecx",
-  "Garantiplus México": "garantiplus",
-  "Garantiplus Colombia": "garantiplus",
-  "Garantiplus Chile": "garantiplus",
-};
-
-/** Empresa (sufijo) para una unidad. Lanza si la unidad no está en el catálogo. */
-export function mapearEmpresa(unidad: string): string {
-  const empresa = EMPRESA_POR_UNIDAD[unidad];
-  if (empresa === undefined) {
-    throw new Error(
-      `Unidad no reconocida: "${unidad}". Válidas: ${Object.keys(EMPRESA_POR_UNIDAD).join(", ")}`,
-    );
-  }
-  return empresa;
+/** id determinista de 4 dígitos derivado de un texto (el project_id / nombre del desarrollo). */
+export function calcularPrdId(texto: string): string {
+  return (sha256BigInt(texto) % 10000n).toString().padStart(4, "0");
 }
 
-/** id determinista de 4 dígitos derivado del project_id (sha256 % 10000). */
-export function calcularPrdId(projectId: string): string {
-  return (sha256BigInt(projectId) % 10000n).toString().padStart(4, "0");
-}
-
-/** Nombre de carpeta destino: `{prd_id}_{empresa}`. */
-export function construirPrdDir(prdId: string, empresa: string): string {
-  return `${prdId}_${empresa}`;
+/** ¿es un slug? minúsculas, dígitos y guiones, sin espacios ni guiones al borde. */
+export function esSlug(texto: string): boolean {
+  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(texto);
 }
 
 /**
- * Resuelve el `prd_dir` libre para un proyecto. Empieza en el id base (sha256 % 10000)
- * y sondea linealmente hasta hallar un dir libre o ya propio. `dueñoDe(dir)` informa qué
- * project_id ocupa cada dir candidato (o null si está libre).
+ * Identidad de carpeta en enginecx_prd a partir del `sistema` (proyecto de la EMPRESA,
+ * folder superior: SIGA, Alfa, Omega, Autoexplora…) y el `projectId` (nombre del desarrollo,
+ * folder inferior: nuevos-endpoints, cambios-landing…; DEBE ser un slug).
+ *
+ * `prdDir` = `{sistema}/PJ{id4}-{projectId}`, con `id4` = hash de 4 dígitos del projectId.
+ * El folder inferior (`PJ…`) es la liga/espejo de `manager/`.
  */
 export function resolverPrdDir(
+  sistema: string,
   projectId: string,
-  unidad: string,
-  dueñoDe: (prdDir: string) => string | null,
 ): { prdId: string; prdDir: string } {
-  const empresa = mapearEmpresa(unidad);
-  const base = sha256BigInt(projectId);
-  for (let i = 0n; i < 10000n; i++) {
-    const prdId = ((base + i) % 10000n).toString().padStart(4, "0");
-    const prdDir = construirPrdDir(prdId, empresa);
-    const dueño = dueñoDe(prdDir);
-    if (dueño === null || dueño === projectId) {
-      return { prdId, prdDir };
-    }
+  if (!sistema.trim()) throw new Error("sistema no puede estar vacío");
+  if (sistema.includes("/")) throw new Error(`sistema no puede contener "/": "${sistema}"`);
+  if (!esSlug(projectId)) {
+    throw new Error(
+      `project_id debe ser un slug (minúsculas, guiones, sin espacios): "${projectId}"`,
+    );
   }
-  throw new Error("Sin ids de 4 dígitos disponibles para esta empresa (10000 ocupados).");
+  const prdId = calcularPrdId(projectId);
+  const prdDir = `${sistema}/PJ${prdId}-${projectId}`;
+  return { prdId, prdDir };
 }

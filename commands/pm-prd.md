@@ -47,12 +47,23 @@ Contexto/transcript/recurso que aporta el desarrollador (puede venir vacío): **
 ```
 manager/
 ├─ PRD.md                   # EL PRD del proyecto (único, versionado y accesible)
+├─ config.json              # identidad del proyecto (FUENTE ÚNICA — ver abajo)
 ├─ transcripts/             # transcripts/documentos ORIGINALES (intactos, .md/.txt)
-└─ transcripts-procesados/  # CONDENSADOS: solo lo relevante extraído de cada original
+└─ transcripts-resumidos/   # CONDENSADOS: solo lo relevante extraído de cada original
 ```
 
-Asegúralas al inicio: `mkdir -p manager manager/transcripts manager/transcripts-procesados`.
+Asegúralas al inicio: `mkdir -p manager manager/transcripts manager/transcripts-resumidos`.
 (La carpeta se llama `manager/` —sin `.`— para que sea visible y accesible también en Windows.)
+
+**Identidad del proyecto (`manager/config.json`) — FUENTE ÚNICA.** Contiene `project_id`
+(nombre del desarrollo, en slug), `unidad`, `sistema`, `prd_id`, `prd_dir`. **Léelos de ahí y NO
+re-preguntes** lo que ya esté; lo que falte se resuelve y se **persiste** en `config.json` (no
+solo en la conversación).
+
+**Espejo al repo central:** todo `manager/` se refleja en
+`enginecx_prd/{sistema}/PJ{prd_id}-{project_id}/` — folder **superior** = `sistema` (proyecto de
+la empresa); folder **inferior** = `PJ{id}-{project_id}` ("mini-proyecto" de cambios, es el
+espejo de `manager/`). Lo gestiona el bin `prd-sync` (ver "Publicación al repo central").
 
 ## Procesamiento de transcripts (insumo del PRD)
 
@@ -63,12 +74,12 @@ El desarrollador aporta transcripts de dos maneras; soporta ambas:
 2. **Dejándolos** en `manager/transcripts/`.
 
 **Detección de transcript NUEVO (paso accionable):** lista `manager/transcripts/` y
-`manager/transcripts-procesados/` (con `Glob` o `ls`) y compáralas por nombre: todo original
-en `transcripts/` que **no** tenga su condensado homónimo en `transcripts-procesados/` es
+`manager/transcripts-resumidos/` (con `Glob` o `ls`) y compáralas por nombre: todo original
+en `transcripts/` que **no** tenga su condensado homónimo en `transcripts-resumidos/` es
 nuevo → ahí viene retroalimentación que debemos integrar al PRD.
 
 Para cada transcript nuevo, produce un **condensado** (solo lo relevante; descarta
-saludos/relleno) y guárdalo en `manager/transcripts-procesados/<mismo-nombre>.md`. El original
+saludos/relleno) y guárdalo en `manager/transcripts-resumidos/<mismo-nombre>.md`. El original
 queda intacto. Usa esta **plantilla fija** (omite un encabezado solo si no hay nada que poner):
 
 ```markdown
@@ -93,20 +104,26 @@ queda intacto. Usa esta **plantilla fija** (omite un encabezado solo si no hay n
 **Formatos admitidos:** texto plano (`.txt`, `.md`) y archivos de código. **NO admitidos:**
 Word/PDF/binarios — comunícalo y pide una versión en texto/markdown; no lo conviertas.
 
-## Empresa / unidad de negocio (selección cerrada, OBLIGATORIA)
+## Empresa / unidad de negocio (de `config.json`, selección cerrada)
 
-El campo **"Área / empresa"** del encabezado del PRD es una **selección cerrada** entre estas
-seis (no inventes ni aceptes otras), la MISMA lista que usa `/pm-gantt`:
+El campo **"Área / empresa"** del encabezado del PRD sale de **`manager/config.json` → `unidad`**
+(FUENTE ÚNICA): **léelo de ahí y NO lo re-preguntes** si ya está.
 
-> **Go Virtual · Garantiplus México · Garantiplus Colombia · Gplus Seguros · Invarat · EngineCX**
+Solo si `unidad` **falta** en `config.json`, pídela con el **mismo selector de dos pasos de
+`/pm-init`** (nunca texto libre) y **persístela** en `config.json`. Son estas **siete** (no
+inventes ni aceptes otras), la MISMA lista que usa `/pm-gantt`:
 
-Pregúntala como selección al crear el PRD por primera vez y úsala en el encabezado. Debe
-**coincidir** con `project.empresa` del Gantt. (Esta lista cerrada tiene precedencia sobre los
-ejemplos de área que aparecen en el prompt entrevistador.)
+> **EngineCX · Garantiplus Chile · Garantiplus Colombia · Garantiplus México · Go Virtual ·
+> Invarat · Gplus Seguros**
+
+Debe **coincidir** con `project.empresa` del Gantt. (Esta lista cerrada tiene precedencia sobre
+los ejemplos de área que aparecen en el prompt entrevistador.)
 
 ## Paso 0 — Entrada (¿continuar, ingerir o crear?)
 
-1. Asegura las carpetas.
+1. Asegura las carpetas. **Lee `manager/config.json`** (si existe) y toma de ahí la identidad
+   del proyecto (`project_id`, `unidad`, `sistema`, `prd_dir`…): es **FUENTE ÚNICA**, no
+   re-preguntes lo que ya esté.
 2. Comprueba si existe **`manager/PRD.md`**:
    - **Existe** → vamos a **continuar/editar** el PRD: ve al **Flujo de edición**.
    - **No existe** → **pregunta al desarrollador** con una **selección de DOS opciones**
@@ -182,8 +199,18 @@ dejar git y el índice consistentes.
 > (`ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`, `ENGINECX_PRD_GIT_EMAIL`,
 > `ENGINECX_PRD_GIT_TOKEN`). No hagas `git` manual sobre `enginecx_prd` ni uses tu identidad local.
 
-Tras actualizar el PRD, refleja el estado y commitea en el repo central (usa `prd_dir` de
-`manager/config.json`):
+La carpeta destino es `enginecx_prd/{sistema}/PJ{prd_id}-{project_id}/` (dos niveles; el
+inferior es el espejo de `manager/`). Toma `prd_dir` de `manager/config.json`.
+
+**Si `prd_dir` (o `sistema`) falta en `config.json`** (proyecto inicializado antes de esta
+capacidad, o creado sin identidad PRD), resuélvela ANTES, igual que en `/pm-init`: con **inputs
+de texto** (no selector) pide `sistema` (folder superior: `SIGA`, `Alfa`, `Omega`,
+`Autoexplora`…) y —si tampoco hay `project_id`— el **nombre del desarrollo** normalizado a slug
+(folder inferior: `nuevos-endpoints`, `cambios-landing`…). Escríbelos en `config.json` y corre:
+- `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" ensure-repo`
+- `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" resolve-id --config "manager/config.json"`
+
+Con `prd_dir` ya en `config.json`, refleja el estado y commitea en el repo central:
 - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`
 - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" commit --dir "<prd_dir>" --message "feat(prd): <nombre> (<prd_dir>) — update PRD"`
 Luego **propón** el push y córrelo solo tras confirmación:
