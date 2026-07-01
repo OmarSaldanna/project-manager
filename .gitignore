@@ -17,3 +17,6 @@ examples/
 avances/
 pruebas/
 tests/
+
+# Clon local del repo central de PRDs (vive solo donde está instalado el plugin):
+enginecx_prd/

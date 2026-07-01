@@ -21,19 +21,20 @@ Contexto que aporta el desarrollador (puede venir vacío): **$ARGUMENTS**
 
 ## Paso 0 — Identidad del proyecto (`manager/config.json`)
 
-1. Lee `manager/config.json`. Debe contener: `project_id`, `nombre`, `unidad`, `repo_url`.
+1. Lee `manager/config.json`. Debe contener: `project_id`, `nombre`, `unidad`.
 2. **Si no existe** (lo normal es que `/pm-init` ya lo haya creado):
-   - Infiere candidatos: `git rev-parse --show-toplevel` (raíz), nombre de la carpeta del
-     repo, y `git remote get-url origin` (para `repo_url`).
+   - Infiere candidatos: `git rev-parse --show-toplevel` (raíz) y el nombre de la carpeta del
+     repo.
    - **Propón** `project_id` (un slug estable y **determinista**: el nombre del repo en
-     kebab-case), `nombre` legible y pregunta la `unidad` de negocio como **selección cerrada**
-     entre estas seis divisiones (no inventes ni aceptes otras): **Go Virtual**,
-     **Garantiplus México**, **Garantiplus Colombia**, **Gplus Seguros**, **Invarat**,
-     **EngineCX**.
+     kebab-case), `nombre` legible y pregunta la `unidad` con el **mismo selector de dos pasos
+     de `/pm-init`** (no texto libre). Unidades válidas (no inventes ni aceptes otras):
+     **EngineCX**, **Garantiplus Chile**, **Garantiplus Colombia**, **Garantiplus México**,
+     **Go Virtual**, **Invarat**, **Gplus Seguros**.
    - Tras confirmar, crea `manager/config.json`. Nota: `manager/` está en `.gitignore`,
      así que es local; por eso el `project_id` se deriva de forma determinista (un clon que
      re-inicialice obtiene el mismo id).
-3. Usa siempre `project_id` (+ `nombre`/`unidad`/`repo_url`) de este archivo en `pm_indexar`.
+3. Usa siempre `project_id` (+ `nombre`/`unidad`) de este archivo en `pm_indexar`; `repo_url`
+   se obtiene de `git remote get-url origin` (opcional — ya no vive en `config.json`).
 
 ## Paso 1 — Reporte de cambios y acuerdo de archivos
 
@@ -44,6 +45,7 @@ Contexto que aporta el desarrollador (puede venir vacío): **$ARGUMENTS**
 3. Resume, sobre los archivos modificados/añadidos/eliminados, **cuáles se van a leer e
    indexar**. Señala cuáles producen entidades (código `.py/.ts/.tsx/.js/.cs/…`, `.md`,
    `.html`) y cuáles se commitean pero **no** generan índice (json/yaml/config/binarios).
+   **NUNCA indexes `.gitignore` ni `CLAUDE.md`**: se commitean pero jamás se pasan a `pm_indexar`.
 4. **Pregunta al desarrollador** si desea continuar con esa lista o ajustarla
    (quitar/añadir archivos).
    - Si quiere **añadir un archivo que no aparece** en `git status` (p.ej. ignorado o ya
@@ -69,7 +71,8 @@ Contexto que aporta el desarrollador (puede venir vacío): **$ARGUMENTS**
 ## Paso 3 — Indexación en la base de datos
 
 Para **cada commit** realizado, llama a `pm_indexar` con:
-- `project_id`, `nombre`, `unidad`, `repo_url` → de `manager/config.json`.
+- `project_id`, `nombre`, `unidad` → de `manager/config.json`; `repo_url` → de
+  `git remote get-url origin` (si hay; opcional).
 - `repo_root` → la raíz absoluta del repo (Paso 1).
 - `commit_sha` → el sha de ESE commit; `created_at` → su fecha ISO.
 - `files` → los archivos de ESE commit (ruta relativa). Marca `deleted: true` para los
@@ -88,3 +91,15 @@ Resume el resultado en ambos lados:
 Si la indexación falla después de un commit, avísalo claramente: el commit ya está en git
 y se puede reintentar la indexación volviendo a correr `/pm-commit` (es idempotente; lo
 que no cambió no se re-embebe).
+
+## Reflejo al repo central de PRDs (enginecx_prd)
+
+> **Identidad git:** el bin `prd-sync` usa el repo/usuario/email/token del `.env` del plugin
+> (`ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`, `ENGINECX_PRD_GIT_EMAIL`,
+> `ENGINECX_PRD_GIT_TOKEN`). No hagas `git` manual sobre `enginecx_prd` ni uses tu identidad local.
+
+Tras indexar y commitear el código, refleja `manager/` y commitea en el repo central (usa
+`prd_dir` de `manager/config.json`):
+- `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`
+- `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" commit --dir "<prd_dir>" --message "chore(prd): <nombre> (<prd_dir>) — sync estado"`
+**Propón** el push y córrelo solo tras confirmación: `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" push`.

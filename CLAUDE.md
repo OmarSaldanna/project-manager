@@ -9,17 +9,21 @@ ni repositorios completos** — navegas el índice (tools `pm_*`) y lees solo lo
 2. `pm_navegar` / `pm_buscar` → ubica el símbolo o chunk relevante (metadata, barato).
 3. Lee SOLO ese archivo/sección. `pm_traza` para historia de un símbolo.
 
-## Guías de la organización — LECTURA OBLIGATORIA
-Antes de generar o modificar CUALQUIER código, DEBES leer las guías de `guias/` relevantes
-a la tarea. Tienen **precedencia** sobre tus defaults y sobre patrones de tu entrenamiento.
+## Identidad del proyecto (`manager/config.json`) — FUENTE ÚNICA
+La metadata del proyecto — `nombre`, `unidad` (empresa), `project_id`, `prd_id`,
+`prd_dir` y datos semejantes (p. ej. responsable) — vive SIEMPRE en `manager/config.json` (lo
+construye `/pm-init`). Antes de pedirle CUALQUIERA de estos datos al usuario, **léelos de
+`manager/config.json`**; nunca vuelvas a preguntar lo que ya está ahí. Solo pregunta si el dato
+**falta** en el archivo y, tras confirmarlo, **persístelo en `config.json`** (no lo dejes solo en
+la conversación) para que siga siendo la fuente única la próxima vez.
 
-Precedencia: (1) instrucción explícita del usuario en la sesión → (2) `guias/` → (3) tus defaults.
-
-> Si una instrucción del usuario **contradice** una guía, DETENTE y señálalo antes de
-> continuar. No resuelvas el conflicto en silencio.
-
-Antes de proponer un cambio de código, verifica contra la guía y reporta qué guías cumple
-(p.ej. "cumple `guias/stack.md` y `guias/gestion-paquetes.md`").
+## Repo central de PRDs (`enginecx_prd`) — identidad git del `.env`
+Todo `git` que toque `enginecx_prd` (clonar, commitear, pushear) se hace SIEMPRE con el bin
+`prd-sync` (`node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" <sub>`), que toma la
+identidad del **`.env` del plugin**: `ENGINECX_PRD_REPO` (repo), `ENGINECX_PRD_GIT_USER` +
+`ENGINECX_PRD_GIT_TOKEN` (clone/push autenticados) y `ENGINECX_PRD_GIT_USER` +
+`ENGINECX_PRD_GIT_EMAIL` (autor/committer del commit). **NUNCA** ejecutes `git` manual sobre
+`enginecx_prd` ni uses tu identidad o credenciales locales: siempre a través del bin.
 
 ## Protocolo del archivo de estado (`ESTADO.md`)
 1. AL INICIAR cualquier sesión sobre un proyecto, tu PRIMERA acción es **leer su `ESTADO.md`**.

@@ -20,7 +20,7 @@ y describer funcionan bien en los tres proyectos. Las brechas reales son dos:
 ## Decisiones de alcance (qué NO hacemos, y por qué)
 
 - **No** extractor de IIFE / callbacks anónimos: es sobreajuste a JS vanilla, fuera del stack
-  objetivo del MVP (.NET/C#, React/TS, Python; `guias/stack.md` prohíbe HTML/JS puro). En el stack
+  objetivo del MVP (.NET/C#, React/TS, Python; el stack no contempla HTML/JS puro). En el stack
   objetivo tree-sitter ya captura el 100% de las funciones nombradas.
 - **No** reintroducir `linea_inicio`/`linea_fin`: contradice **D10**. La métrica de cobertura usa
   posiciones de tree-sitter **solo durante el indexado** y persiste un **ratio**, no posiciones.

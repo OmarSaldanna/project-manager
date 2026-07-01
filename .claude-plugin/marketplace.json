@@ -7,8 +7,8 @@
   "plugins": [
     {
       "name": "pm-ai",
-      "description": "Project Manager con IA: RAG de documentación + índice simbólico de código, memoria de estado por proyecto y guías de la organización. Engine CX.",
-      "version": "0.4.0",
+      "description": "Project Manager con IA: RAG de documentación + índice simbólico de código, memoria de estado por proyecto. Engine CX.",
+      "version": "0.5.6",
       "source": "."
     }
   ]
