@@ -1,7 +1,7 @@
 {
   "name": "pm-ai",
-  "version": "0.4.0",
-  "description": "Project Manager con IA: RAG de documentación + índice simbólico de código, trazabilidad de cambios (changelog por entidad y reporte /pm-trace), memoria de estado por proyecto y guías de la organización. Engine CX.",
+  "version": "0.5.6",
+  "description": "Project Manager con IA: RAG de documentación + índice simbólico de código, trazabilidad de cambios (changelog por entidad y reporte /pm-trace), memoria de estado por proyecto. Engine CX.",
   "author": {
     "name": "Engine CX"
   },

@@ -61,15 +61,28 @@ Crea la identidad que usarán `/pm-commit` y el indexador (si ya existe, respét
 
 1. Propón un `project_id` **determinista**: el nombre del repo en kebab-case (así un clon
    futuro vuelve a derivar el mismo id al re-inicializar). Propón también un `nombre`
-   legible. Toma `repo_url` de `git remote get-url origin` (si hay).
-2. Pregunta la `unidad` de negocio como una **selección cerrada** entre estas seis
-   divisiones (no inventes ni aceptes otras): **Go Virtual**, **Garantiplus México**,
-   **Garantiplus Colombia**, **Gplus Seguros**, **Invarat**, **EngineCX**. Si la diste en
-   `$ARGUMENTS`, mapéala a una de las seis; si no encaja en ninguna, vuelve a preguntar
-   mostrando las opciones.
+   legible.
+2. Pregunta la `unidad` de negocio **SIEMPRE con un selector** (AskUserQuestion), nunca como
+   texto libre ni pidiendo que la escriba. Como el selector admite **máximo 4 opciones**, usa
+   un **selector de DOS PASOS** (todo elegible **sin teclear**):
+   - **Paso A** (selector, en ESTE orden exacto): `EngineCX`, `Garantiplus`, `Go Virtual`,
+     `Invarat / Gplus Seguros`.
+   - **Paso B** (segundo selector, SOLO si hace falta desambiguar):
+     - Si eligió **Garantiplus** → selector `Garantiplus Chile` / `Garantiplus Colombia` /
+       `Garantiplus México`.
+     - Si eligió **Invarat / Gplus Seguros** → selector `Invarat` / `Gplus Seguros`.
+     - `EngineCX` y `Go Virtual` se resuelven en el Paso A (sin Paso B).
+   - El valor final que guardas en `config.json.unidad` debe ser **una de estas exactas**:
+     `EngineCX`, `Garantiplus Chile`, `Garantiplus Colombia`, `Garantiplus México`,
+     `Go Virtual`, `Invarat`, `Gplus Seguros`.
+   - **Empresa (sufijo del folder):** las **tres Garantiplus** (Chile, Colombia, México)
+     **colapsan** al sufijo `garantiplus` en el `prd_dir` (`{id}_{empresa}`); el resto mapea
+     1-a-1. Ese colapso lo hace `prd-sync` (`resolve-id`); tú solo guardas la `unidad` exacta.
+   - Si la `unidad` ya vino en `$ARGUMENTS` o ya está en `manager/config.json`, mapéala directo
+     y **no preguntes** (ver "Identidad del proyecto — FUENTE ÚNICA").
 3. Tras confirmar, escribe `manager/config.json`:
    ```json
-   { "project_id": "...", "nombre": "...", "unidad": "...", "repo_url": "..." }
+   { "project_id": "...", "nombre": "...", "unidad": "..." }
    ```
 4. Asegura el repo central y resuelve la identidad PRD (id de 4 dígitos + carpeta por empresa):
    - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" ensure-repo`
@@ -85,7 +98,8 @@ A diferencia de `/pm-commit`, aquí se lee TODO el proyecto, **excepto lo que es
    `git ls-files --cached --others --exclude-standard`
    (en un proyecto nuevo vacío esto devolverá poco o nada).
 2. Quédate con los **indexables** y descarta el resto (binarios, lockfiles como
-   `pnpm-lock.yaml`/`package-lock.json`, `.env`). El mapeo fiel está en
+   `pnpm-lock.yaml`/`package-lock.json`, `.env`). **NUNCA indexes `.gitignore` ni `CLAUDE.md`**
+   (raíz o de subcarpetas): exclúyelos SIEMPRE de la lista, aunque git los liste. El mapeo fiel está en
    `docs/entidades-y-indexacion.md`; resumido, cada archivo se procesa bajo esta
    **identidad de código** (su `tipo`):
 
@@ -95,7 +109,7 @@ A diferencia de `/pm-commit`, aquí se lee TODO el proyecto, **excepto lo que es
    | `markdown_chunk` | `.md` |
    | `reporte` **o** `pagina` | `.html .htm` (ver clasificación abajo) |
    | `ejecutable` | `.sh .bash .cmd .bat`, o archivo sin extensión con shebang de shell |
-   | `json` / `yaml` / `config` | `.json` / `.yaml .yml` / `.toml .ini .config .gitignore .npmrc .editorconfig .env.example` |
+   | `json` / `yaml` / `config` | `.json` / `.yaml .yml` / `.toml .ini .config .npmrc .editorconfig .env.example` (⚠ `.gitignore` y `CLAUDE.md` **NO** se indexan) |
    | `query` | `.sql .psql .pgsql .ddl .dml` |
    | `estilos` | `.css .scss .sass .less .styl .pcss` |
 
@@ -142,7 +156,8 @@ SOLO tras el **sí explícito** del Paso 4.5, indexa el proyecto completo:
 1. Determina el commit: `git rev-parse HEAD` (si hay historia; si no, usa `initial`) y la
    fecha `git show -s --format=%cI HEAD` (si no hay, la fecha de hoy).
 2. Llama a `pm_indexar` con:
-   - `project_id`, `nombre`, `unidad`, `repo_url` → de `manager/config.json`.
+   - `project_id`, `nombre`, `unidad` → de `manager/config.json`; `repo_url` → de
+     `git remote get-url origin` (si hay; opcional — ya no vive en `config.json`).
    - `repo_root` → la raíz absoluta del repo.
    - `commit_sha` y `created_at` → del paso anterior.
    - `files` → la lista indexable acordada (todas como altas; sin `deleted`).
@@ -158,6 +173,10 @@ SOLO tras el **sí explícito** del Paso 4.5, indexa el proyecto completo:
   bitácoras de la evolución del código.
 
 ## Paso 7 — Publicar en el repo central de PRDs (enginecx_prd)
+
+> **Identidad git:** el bin `prd-sync` usa el repo/usuario/email/token del `.env` del plugin
+> (`ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`, `ENGINECX_PRD_GIT_EMAIL`,
+> `ENGINECX_PRD_GIT_TOKEN`). No hagas `git` manual sobre `enginecx_prd` ni uses tu identidad local.
 
 1. Espeja `manager/` y commitea en el repo central (lee `prd_dir` de `manager/config.json`):
    - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`

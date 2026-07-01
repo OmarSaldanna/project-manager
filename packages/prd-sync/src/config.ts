@@ -5,7 +5,6 @@ export interface ProjectConfig {
   project_id: string;
   nombre: string;
   unidad: string;
-  repo_url?: string;
   prd_id?: string;
   prd_dir?: string;
 }

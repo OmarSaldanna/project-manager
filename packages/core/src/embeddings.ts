@@ -1,7 +1,7 @@
 import type { EmbeddingsConfig } from "./env.js";
 
 /**
- * Adaptador de embeddings. Toda llamada al modelo pasa por aquí (guia/backend.md, D11):
+ * Adaptador de embeddings. Toda llamada al modelo pasa por aquí (D11):
  * cambiar de proveedor = cambiar URL/API key, sin tocar el resto del código.
  */
 export interface Embedder {

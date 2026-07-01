@@ -6,7 +6,7 @@ repositorio completos** — navegas el índice (tools `pm_*`) y lees solo lo nec
 
 ## Comandos del plugin (qué hacen y cuándo)
 
-- **`/pm-init`** — inicializa PM·AI en este repo: crea `manager/`, copia las guías y el
+- **`/pm-init`** — inicializa PM·AI en este repo: crea `manager/`, copia el
   tablero, prepara el `.gitignore` y hace el **primer indexado completo** del proyecto en
   la base de datos. Se corre una vez al adoptar PM·AI.
 - **`/pm-prd`** — construye/mantiene el **PRD** (`manager/PRD.md`, **único** por proyecto)
@@ -40,14 +40,31 @@ manager/
 ├─ transcripts/             # transcripts/documentos originales
 ├─ transcripts-procesados/  # condensados de cada transcript (insumo del PRD)
 ├─ gantt/                   # dashboard del Gantt (index.html con datos embebidos = reflejo de la DB)
-├─ guias/                   # copia de las guías de la organización
 ├─ traces/                  # plantilla + bitácoras de traza generadas por /pm-trace
-└─ config.json              # identidad del proyecto (project_id, unidad, repo_url)
+└─ config.json              # identidad del proyecto (nombre, unidad, project_id, prd_id, prd_dir)
 ```
 
 **Versionado:** de `manager/` git versiona **únicamente `manager/PRD.md`**; el resto es
 estado local y está ignorado (`manager/*` + `!manager/PRD.md` en `.gitignore`). El PRD es el
 único artefacto del directorio que debe quedar versionado y accesible.
+
+## Identidad del proyecto (`manager/config.json`) — FUENTE ÚNICA
+
+La metadata del proyecto — `nombre`, `unidad` (empresa), `project_id`, `prd_id`,
+`prd_dir` y datos semejantes (p. ej. responsable) — vive SIEMPRE en `manager/config.json` (lo
+construye `/pm-init`). Antes de pedirle CUALQUIERA de estos datos al usuario, **léelos de
+`manager/config.json`**; nunca vuelvas a preguntar lo que ya está ahí. Solo pregunta si el dato
+**falta** en el archivo y, tras confirmarlo, **persístelo en `config.json`** (no lo dejes solo en
+la conversación) para que siga siendo la fuente única la próxima vez.
+
+## Repo central de PRDs (`enginecx_prd`) — identidad git del `.env`
+
+Todo `git` que toque `enginecx_prd` (clonar, commitear, pushear) se hace SIEMPRE con el bin
+`prd-sync` (`node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" <sub>`), que toma la
+identidad del **`.env` del plugin**: `ENGINECX_PRD_REPO` (repo), `ENGINECX_PRD_GIT_USER` +
+`ENGINECX_PRD_GIT_TOKEN` (clone/push autenticados) y `ENGINECX_PRD_GIT_USER` +
+`ENGINECX_PRD_GIT_EMAIL` (autor/committer del commit). **NUNCA** ejecutes `git` manual sobre
+`enginecx_prd` ni uses tu identidad o credenciales locales: siempre a través del bin.
 
 ## Navegación (no leas todo)
 
@@ -66,35 +83,6 @@ estado local y está ignorado (`manager/*` + `!manager/PRD.md` en `.gitignore`).
   `manager/traces/`.
 - El `cambio`/diff se puebla **de aquí en adelante**: lo indexado antes de esta capacidad
   aparece como "diff no disponible".
-
-## Guías de la organización — LECTURA OBLIGATORIA Y SELECTIVA
-
-Antes de generar o modificar CUALQUIER código, lee la(s) guía(s) de `manager/guias/`
-relevantes a la tarea (no todas). Tienen **precedencia** sobre tus defaults.
-
-> Precedencia: (1) instrucción explícita del usuario → (2) `manager/guias/` → (3) tus
-> defaults. Si una instrucción del usuario **contradice** una guía, DETENTE y señálalo
-> antes de continuar; no resuelvas el conflicto en silencio.
-
-Qué contiene cada archivo (para que sepas cuál abrir):
-
-- **`README.md`** — el conjunto de guías y las **reglas de precedencia**; cómo se aplican.
-- **`stack.md`** — stack estándar: separación frontend/backend, backend **.NET Core 8 + C#**,
-  frontend **React** (Vue permitido); prohibidos **Laravel** y **HTML puro**.
-- **`gestion-paquetes.md`** — usa **siempre `pnpm`** (nunca npm/yarn); aprobación explícita
-  de build scripts y lockfiles deterministas.
-- **`backend.md`** — backend .NET Core 8 + C# con la seguridad nativa de Microsoft, y una
-  **capa proxy/adaptador única** para LLMs (OpenRouter + fallback; embeddings aparte).
-- **`frontend.md`** — frontend React/Vue que **solo consume la API** (sin lógica de negocio
-  ni acceso a datos); prohibidos Laravel y HTML puro.
-- **`documentacion.md`** — el **PRD y el Plan son distintos**; todo en Markdown con jerarquía
-  de títulos `#`/`##`/`###` (el RAG hace chunks por capítulo `##`); avances bajo
-  propuesta → revisión → confirmación.
-- **`codigo.md`** — estandarización ("no satélites"), **unit tests** obligatorios por etapa,
-  seguridad de dependencias, y estilo de comentarios/nombres (imitar el código vecino).
-
-Antes de proponer un cambio de código, verifica contra la guía y reporta qué guías cumple
-(p. ej. "cumple `stack.md` y `gestion-paquetes.md`").
 
 ## Tablero de planeación (DB `pm_gantt*` → `manager/gantt/index.html`)
 

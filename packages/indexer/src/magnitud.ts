@@ -3,7 +3,7 @@
  * controla costo y ruido: si el delta es `cosmetico` (formato/strings/estilos), `applyFile`
  * genera el `cambio` con una plantilla barata (sin LLM); si no, lo redacta el LLM.
  *
- * Puro y determinista (sin I/O) → testeable en aislamiento (guia codigo.md). No usa parser: es
+ * Puro y determinista (sin I/O) → testeable en aislamiento. No usa parser: es
  * una heurística textual + comparación de firma/dependencias (señales que el indexador ya captura).
  *
  * Sesgo CONSERVADOR: ante la duda NO marca `cosmetico` (un falso cosmético ocultaría un cambio

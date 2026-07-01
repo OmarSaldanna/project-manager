@@ -178,6 +178,10 @@ dejar git y el índice consistentes.
 
 ## Publicación al repo central (enginecx_prd)
 
+> **Identidad git:** el bin `prd-sync` usa el repo/usuario/email/token del `.env` del plugin
+> (`ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`, `ENGINECX_PRD_GIT_EMAIL`,
+> `ENGINECX_PRD_GIT_TOKEN`). No hagas `git` manual sobre `enginecx_prd` ni uses tu identidad local.
+
 Tras actualizar el PRD, refleja el estado y commitea en el repo central (usa `prd_dir` de
 `manager/config.json`):
 - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`

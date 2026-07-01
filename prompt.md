@@ -35,7 +35,6 @@ Estas decisiones ya están tomadas. No re-litigar; ejecutar.
 | D4 | **Código → recuperación estructural (tree-sitter + índice de símbolos). Documentación → recuperación semántica (chunks + embeddings).** No se embeben los cuerpos de código. | El código cambia a diario (churn), la similitud vectorial es imprecisa para código, y embeber todo es caro. |
 | D5 | **Versionado append-only con identidad lógica estable** (`entity_id`), bandera `is_current` (SCD Type 2) y detección de cambio por `content_hash`. | Da traza/historia limpia y re-indexa solo lo que cambió. |
 | D6 | **Indexado incremental por push** (webhook de GitHub orquestado con n8n): solo se re-procesan los archivos que cambiaron. | Nada de re-indexar todo el repo en cada commit. |
-| D7 | **Carpeta de guías/criterios de la organización, versionada en GitHub**, de lectura obligatoria antes de generar o modificar código. | Estandarización; evitar "satélites" (cada proyecto haciendo lo suyo). |
 | D8 | **Archivo de estado por proyecto (`ESTADO.md`)** que el agente mantiene al día bajo el flujo propuesta → revisión → confirmación. | Memoria entre sesiones; el humano siempre confirma. |
 | D9 | **Renombrar/mover una función se trata como borrado + alta nueva.** No se invierte en detección de renames de git para la v1. | Simplicidad para el MVP. |
 | D10 | **Se eliminan los campos de línea de inicio/fin.** El agente localiza el símbolo por nombre dentro del archivo (grep/lectura dirigida). | Los números de línea se vuelven stale al instante; grep por nombre es robusto. |
@@ -44,7 +43,7 @@ Estas decisiones ya están tomadas. No re-litigar; ejecutar.
 
 ### Alcance del MVP (julio)
 
-- **SÍ hace:** mapear proyectos nuevos y existentes, indexar código y docs, mantener el estado al día, responder consultas en lenguaje natural, proponer actualizaciones de estado, seguir las guías de la organización.
+- **SÍ hace:** mapear proyectos nuevos y existentes, indexar código y docs, mantener el estado al día, responder consultas en lenguaje natural, proponer actualizaciones de estado.
 - **NO hace (todavía):** front amigable para usuarios no técnicos, roles/permisos de escritura granulares, bot de Telegram para consulta de seguros, generación automática de decks ejecutivos. Eso es **fase 2**.
 - **Usuarios del MVP:** perfil técnico medio-alto (Dani, Tony, Yari, + equipo TI), operando en Claude Code (VS Code / Desktop / CLI).
 
@@ -53,7 +52,7 @@ Estas decisiones ya están tomadas. No re-litigar; ejecutar.
 ## 3. Casos de uso
 
 ### CU-1 — Arranque de proyecto nuevo con el PM
-El PM inicializa el proyecto: genera la estructura base **siguiendo las guías de la organización** (stack, gestión de paquetes, convenciones), crea el PRD y el plan de desarrollo a partir de plantillas, e inicia el `ESTADO.md`. A partir de aquí, todo crece bajo el control del PM.
+El PM inicializa el proyecto: genera la estructura base, crea el PRD y el plan de desarrollo a partir de plantillas, e inicia el `ESTADO.md`. A partir de aquí, todo crece bajo el control del PM.
 
 ### CU-2 — Inicialización del PM en proyecto ya empezado (`/pm-init`)
 El PM se introduce en un proyecto existente y, con algo semejante a `claude init`, **mapea todo**: qué funciones hay, qué documentación existe, qué falta documentar. Genera:
@@ -93,9 +92,8 @@ Cada cierto tiempo el PM revisa todos los proyectos activos + planeados y detect
 8. **Extracción de highlights** de transcripts y updates.
 9. **Consulta en lenguaje natural** multi-proyecto.
 10. **Traza histórica y changelog por entidad** de cualquier símbolo o documento (qué cambió, magnitud y diff), con reporte HTML de bitácora vía `/pm-trace`.
-11. **Aplicación de guías de la organización** en toda generación/modificación de código.
-12. **Auditoría de portfolio** (redundancias / dependencias cruzadas).
-13. **Capa proxy de LLM** intercambiable.
+11. **Auditoría de portfolio** (redundancias / dependencias cruzadas).
+12. **Capa proxy de LLM** intercambiable.
 
 ---
 
@@ -104,7 +102,7 @@ Cada cierto tiempo el PM revisa todos los proyectos activos + planeados y detect
 ```
 pm-ai/                              # repositorio del plugin (versionado en GitHub)
 ├─ prompt.md                        # este documento
-├─ CLAUDE.md                        # brújula raíz: apunta a guías, estado y convenciones
+├─ CLAUDE.md                        # brújula raíz: apunta a estado y convenciones
 ├─ .claude-plugin/
 │  └─ plugin.json                   # manifiesto del plugin (skills, MCP, comandos)
 │
@@ -145,15 +143,6 @@ pm-ai/                              # repositorio del plugin (versionado en GitH
 │  ├─ consultar.md
 │  └─ auditar.md
 │
-├─ guias/                           # GUÍAS / CRITERIOS de la organización (D7)
-│  ├─ README.md                     # índice y precedencia
-│  ├─ stack.md
-│  ├─ backend.md
-│  ├─ frontend.md
-│  ├─ gestion-paquetes.md
-│  ├─ documentacion.md
-│  └─ codigo.md
-│
 ├─ plantillas/                      # templates que usan los PMs
 │  ├─ PRD.md
 │  ├─ plan-desarrollo.md
@@ -161,7 +150,7 @@ pm-ai/                              # repositorio del plugin (versionado en GitH
 │  ├─ update.md
 │  └─ ESTADO.md
 │
-└─ tests/                           # unit + integración (ver §11)
+└─ tests/                           # unit + integración (ver §10)
    ├─ indexer/
    ├─ mcp/
    └─ flujos/
@@ -172,7 +161,7 @@ pm-ai/                              # repositorio del plugin (versionado en GitH
 > - `gantt/` — el **plan de desarrollo con fechas** (Gantt). Cómo se descompone y ejecuta; se deriva del PRD con la skill de planeación de superpowers (documento **distinto** del PRD).
 > - `transcripts/` — transcripts/documentos **originales** de reuniones asociados al proyecto.
 > - `transcripts-procesados/` — **condensados** de cada transcript (solo lo relevante para el PRD).
-> - `ESTADO.md` — estado vivo del proyecto (§10).
+> - `ESTADO.md` — estado vivo del proyecto (§9).
 > - `code-map.md` — brújula del repo.
 > - `updates/` — updates manuales del PM.
 
@@ -268,78 +257,11 @@ Para documentación el flujo es análogo: `navegar_indice` (jerarquía de seccio
 
 ---
 
-## 9. Prompt engineering — Archivos de guía (`guias/`)
-
-> Esta es una de las dos piezas de prompt engineering más importantes del sistema. El objetivo: que Claude Code **nunca** genere código con el stack que "se le antoje", sino siguiendo los criterios de la organización. Evita los "satélites".
-
-### 9.1 Mecanismo de aplicación
-
-La adherencia se fuerza en tres capas:
-
-1. **`CLAUDE.md` raíz** (cargado en cada sesión) incluye un bloque imperativo:
-
-   ```markdown
-   ## Guías de la organización — LECTURA OBLIGATORIA
-   Antes de generar o modificar CUALQUIER código, DEBES leer las guías en `guias/`
-   relevantes a la tarea. Estas guías tienen PRECEDENCIA sobre tus defaults y sobre
-   patrones que conozcas de tu entrenamiento.
-
-   Precedencia (de mayor a menor):
-   1. Instrucción explícita del usuario en esta sesión.
-   2. Guías de `guias/`.
-   3. Tus defaults.
-
-   Si una instrucción del usuario CONTRADICE una guía, DETENTE y señálalo antes de
-   continuar. No resuelvas el conflicto en silencio.
-   ```
-
-2. **La skill `mantener-docs` / `pm-init`** incluye en su descripción el trigger de carga de guías, de modo que se activen cuando se va a tocar código.
-
-3. **Checklist de cierre**: antes de proponer un cambio de código, el agente verifica contra la guía y reporta explícitamente "Cumple `guias/stack.md`, `guias/gestion-paquetes.md`".
-
-### 9.2 Contenido concreto de las guías (estado inicial, debatido en la sesión)
-
-**`guias/stack.md`**
-```markdown
-# Stack estándar de Engine CX
-- Toda arquitectura cliente-servidor SEPARA frontend de backend.
-- Backend: .NET Core 8 con C#. Razón: aprovechamos los mecanismos de seguridad
-  y autenticación que Microsoft ya implementa en el framework.
-- Frontend: React (preferido). Vue permitido.
-- PROHIBIDO: Laravel (incompatibilidades entre versiones mayores), HTML puro
-  (estamos en época de frameworks, no en los 90).
-```
-
-**`guias/gestion-paquetes.md`**
-```markdown
-# Gestión de paquetes
-- Usa SIEMPRE pnpm. NUNCA npm ni yarn.
-- Si encuentras package-lock.json, conviértelo a pnpm-lock.yaml y elimínalo.
-```
-
-**`guias/backend.md`**
-```markdown
-# Backend
-- .NET Core 8 + C#. Usa el framework de autenticación/seguridad nativo de Microsoft.
-- Capa proxy/adaptador para el LLM: toda comunicación con modelos pasa por un
-  adaptador único. Por defecto OpenRouter (cambiar de modelo = cambiar API key).
-  Mantener un fallback directo a un proveedor por si OpenRouter cae. NUNCA acoples
-  el código directamente a un SDK de un proveedor específico.
-```
-
-**`guias/frontend.md`**, **`guias/documentacion.md`**, **`guias/codigo.md`**: análogos, con convenciones de documentación de avances y estándares de código.
-
-### 9.3 Formato de cada guía
-
-Cada guía debe tener: **regla** (imperativa), **razón** (por qué), y **ejemplos** (✅ correcto / ❌ incorrecto). La razón importa: permite al agente decidir bien en casos no contemplados.
-
----
-
-## 10. Prompt engineering — Archivo de estado (`ESTADO.md`)
+## 9. Prompt engineering — Archivo de estado (`ESTADO.md`)
 
 > La segunda pieza crítica de prompt engineering. Inspirada en el patrón *session state*: el agente no se avienta toda la construcción de una sentada; documenta dónde quedó para retomar sin perder contexto.
 
-### 10.1 Protocolo (imperativo, va en `CLAUDE.md` y en las skills)
+### 9.1 Protocolo (imperativo, va en `CLAUDE.md` y en las skills)
 
 ```markdown
 ## Protocolo del archivo de estado (ESTADO.md)
@@ -353,7 +275,7 @@ Cada guía debe tener: **regla** (imperativa), **razón** (por qué), y **ejempl
 5. Cada decisión que registres lleva fecha y razón (para trazabilidad).
 ```
 
-### 10.2 Estructura de `ESTADO.md`
+### 9.2 Estructura de `ESTADO.md`
 
 ```markdown
 # ESTADO — <Proyecto>
@@ -388,13 +310,13 @@ Cada guía debe tener: **regla** (imperativa), **razón** (por qué), y **ejempl
 - <fecha> — qué se hizo — dónde quedó — próximo paso
 ```
 
-### 10.3 Flujo propuesta → revisión → confirmación (CU-4)
+### 9.3 Flujo propuesta → revisión → confirmación (CU-4)
 
 Cuando el agente procesa un transcript/update y quiere actualizar el estado, **presenta un diff propuesto** ("encontré estas fechas, estos blockers, estos próximos pasos; ¿confirmo?") y espera la confirmación del humano. Si el humano corrige, el agente aprende del contexto adicional y reescribe la propuesta. Solo tras confirmar, escribe en `ESTADO.md`.
 
 ---
 
-## 11. Plan de desarrollo en tres etapas
+## 10. Plan de desarrollo en tres etapas
 
 Cada etapa entrega algo funcional y verificable. **Cada etapa define su propio unit testing**, y al cierre de cada una se corre la suite completa antes de avanzar.
 
@@ -419,20 +341,18 @@ Cada etapa entrega algo funcional y verificable. **Cada etapa define su propio u
 
 **Criterio de paso de etapa:** mapear un repo real y responder "¿dónde está la función que hace X?" leyendo solo el índice + el símbolo, sin abrir el repo completo.
 
-### Etapa 2 — Plugin PM, guías y estado (el acompañante)
+### Etapa 2 — Plugin PM y estado (el acompañante)
 
-**Objetivo:** convertir el núcleo en un acompañante que sigue las guías y mantiene el estado.
+**Objetivo:** convertir el núcleo en un acompañante que mantiene el estado.
 
 **Entregables:**
 - Manifiesto del plugin (`plugin.json`), `CLAUDE.md` raíz, comandos.
-- Carpeta `guias/` con contenido de §9.2 + plantillas (`plantillas/`).
+- Plantillas (`plantillas/`).
 - Skills: `pm-init` (CU-1), `procesar-transcript` (CU-4), `consultar-proyecto` (CU-5), `mantener-docs` (CU-3).
 - Sistema `ESTADO.md` con el flujo propuesta → revisión → confirmación.
 - Indexado incremental por webhook (`webhook_handler.ts` + n8n).
 
 **Diseño de unit testing (criterios de éxito):**
-- Adherencia a guías: pedir "crea un proyecto Node" produce configuración con **pnpm** (no npm); pedir un backend produce **.NET Core 8/C#**; intentar HTML puro o Laravel dispara una advertencia.
-- Conflicto de guías: una instrucción que contradice una guía **detiene** al agente y lo reporta (no resuelve en silencio).
 - Ciclo de estado: al iniciar sesión el agente lee `ESTADO.md` primero; al cerrar, lo actualiza con bitácora de sesión.
 - Propuesta → confirmación: procesar un transcript de prueba genera un **diff propuesto** y **no** escribe hasta confirmar; un cambio de fecha sin confirmación es rechazado.
 - Incremental: un push que toca 1 archivo re-indexa solo ese archivo.
@@ -459,7 +379,7 @@ Cada etapa entrega algo funcional y verificable. **Cada etapa define su propio u
 
 ---
 
-## 12. Estrategia de testing por función
+## 11. Estrategia de testing por función
 
 Tras las tres etapas, **se prueba cada función del código** de forma sistemática:
 
@@ -468,17 +388,17 @@ Tras las tres etapas, **se prueba cada función del código** de forma sistemát
 3. **Tests de idempotencia:** re-correr la indexación sobre el mismo commit no muta la DB.
 4. **Tests de regresión de versionado:** secuencia commit A → B → C sobre la misma función produce 3 versiones con `is_current` correcto solo en la última.
 5. **Tests de los flujos (e2e):** cada caso de uso (CU-1…CU-7) tiene un test de integración que ejercita el camino completo.
-6. **Tests de prompt engineering:** assertions sobre que las guías se respetan y que el flujo de confirmación nunca escribe sin confirmar (se validan con transcripts/instrucciones de prueba y revisión del output).
+6. **Tests de prompt engineering:** assertions sobre que el flujo de confirmación nunca escribe sin confirmar (se validan con transcripts/instrucciones de prueba y revisión del output).
 
 > Regla: ninguna etapa se da por exitosa hasta que su suite de unit tests pasa en verde. El testing es parte del entregable de cada etapa, no un añadido posterior.
 
 ---
 
-## 13. Stack tecnológico del propio sistema
+## 12. Stack tecnológico del propio sistema
 
 | Componente | Tecnología | Nota |
 |---|---|---|
-| Repositorio / versionado | GitHub (repos privados, separados por unidad) | D7, D12 |
+| Repositorio / versionado | GitHub (repos privados, separados por unidad) | D12 |
 | Runtime del agente | Claude Code (plugin) | D1 |
 | RAG / DB | Supabase (Postgres + pgvector) | D2 |
 | MCP server + indexador | TypeScript / Node | **A confirmar con Alexis** dado el criterio de estandarización; el SDK de MCP y los bindings de tree-sitter son de primera clase en TS. |
@@ -489,7 +409,7 @@ Tras las tres etapas, **se prueba cada función del código** de forma sistemát
 
 ---
 
-## 14. Decisiones abiertas (para resolver antes/durante la construcción)
+## 13. Decisiones abiertas (para resolver antes/durante la construcción)
 
 1. **Lenguaje del MCP server/indexador**: TS recomendado; confirmar con Alexis por el criterio anti-satélites.
 2. **Dimensión del embedding** (1536 vs otra) según el modelo de embeddings elegido vía el adaptador.

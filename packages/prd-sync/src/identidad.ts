@@ -13,6 +13,7 @@ const EMPRESA_POR_UNIDAD: Record<string, string | undefined> = {
   "EngineCX": "enginecx",
   "Garantiplus México": "garantiplus",
   "Garantiplus Colombia": "garantiplus",
+  "Garantiplus Chile": "garantiplus",
 };
 
 /** Empresa (sufijo) para una unidad. Lanza si la unidad no está en el catálogo. */
