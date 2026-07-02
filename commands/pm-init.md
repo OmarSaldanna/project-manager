@@ -206,6 +206,12 @@ SOLO tras el **sí explícito** del Paso 4.5, indexa el proyecto completo:
 > (`ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`, `ENGINECX_PRD_GIT_EMAIL`,
 > `ENGINECX_PRD_GIT_TOKEN`). No hagas `git` manual sobre `enginecx_prd` ni uses tu identidad local.
 
+> **Qué se publica.** El espejo sube **TODO** el contenido de `manager/` al repo central —
+> `PRD.md`, `config.json`, `transcripts/` y `transcripts-resumidos/` incluidos (estas carpetas
+> **NO** se ignoran en `enginecx_prd`; el `.gitignore` que excluye `manager/*` es SOLO del repo
+> local del proyecto, no del central). Lo único que el espejo **descarta** es el relleno del
+> SO/editor (`.DS_Store`, recursos `._*`, `Thumbs.db`, `desktop.ini`, temporales `*~`/`*.swp`).
+
 1. Espeja `manager/` y commitea en el repo central (lee `prd_dir` de `manager/config.json`):
    - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`
    - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" commit --dir "<prd_dir>" --message "feat(prd): <nombre> (<prd_dir>) — init"`

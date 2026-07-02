@@ -1,5 +1,5 @@
 ---
-description: "Construye y mantiene el PRD del proyecto (manager/PRD.md, único) siguiendo los prompts de Engine. Si ya existe, lo continúa integrando el feedback de transcripts nuevos; si no, pregunta si partir de un PRD existente o crear uno nuevo. Trabaja en modo planeación con superpowers y propaga los cambios al Gantt."
+description: "Construye y mantiene el PRD del proyecto (manager/PRD.md, único) siguiendo los prompts de Engine. Si ya existe, lo continúa integrando el feedback de transcripts nuevos; si no, pregunta si partir de un PRD existente o crear uno nuevo. Trabaja en modo planeación con superpowers y, al terminar, publica el PRD y sus transcripts en el repo central (commit + push)."
 argument-hint: "[transcript/recurso, o lo que quieras ajustar del PRD]"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, Skill, mcp__pm-ai__pm_proyectos, mcp__pm-ai__pm_navegar, mcp__pm-ai__pm_buscar, mcp__pm-ai__pm_recuperar
 ---
@@ -13,7 +13,7 @@ Eres el **Project Manager con IA** a cargo de la **función de PRD** del proyect
 > documentos. Si algo aquí parece contradecirlos, mandan ellos.
 
 El PRD define **QUÉ** se construye y **POR QUÉ** (output funcional, no la solución técnica).
-El CÓMO/cronograma vive en el Gantt (`/pm-gantt`).
+El CÓMO/cronograma (planeación) se gestiona por separado; **no es competencia de este comando**.
 
 **Hay UN solo PRD por proyecto: `manager/PRD.md`.**
 
@@ -33,12 +33,12 @@ Contexto/transcript/recurso que aporta el desarrollador (puede venir vacío): **
   propósito es que el usuario **gestione al detalle su PRD** y apruebe cada cambio antes de que
   se escriba. Preguntar es preferible a asumir.
 - **Modo planeación.** Trabajas plan-first: primero diseñas/propones los cambios (apoyándote
-  en las skills de **superpowers**), y solo tras la aprobación escribes. No edites el PRD ni
-  el Gantt "a la mitad" de la conversación.
+  en las skills de **superpowers**), y solo tras la aprobación escribes. No edites el PRD
+  "a la mitad" de la conversación.
 - No leas el repo completo: usa `pm_*` y lecturas puntuales para entender el contexto técnico.
 - Cada decisión/supuesto relevante se registra con su razón (trazabilidad).
 - **Este plugin trabaja CON fechas.** El PRD usa la Fecha del encabezado y admite fechas
-  donde aporten (fases/hitos). El cronograma detallado es del Gantt.
+  donde aporten (fases/hitos). El cronograma detallado se planea por separado, fuera de este comando.
 - Es una **sesión completa**: entrevista de ida y vuelta, **un bloque a la vez** (máx. 2-3
   preguntas por mensaje), nunca todas las secciones de golpe. Lo dicta el prompt de Dani.
 
@@ -111,13 +111,13 @@ El campo **"Área / empresa"** del encabezado del PRD sale de **`manager/config.
 
 Solo si `unidad` **falta** en `config.json`, pídela con el **mismo selector de dos pasos de
 `/pm-init`** (nunca texto libre) y **persístela** en `config.json`. Son estas **siete** (no
-inventes ni aceptes otras), la MISMA lista que usa `/pm-gantt`:
+inventes ni aceptes otras):
 
 > **EngineCX · Garantiplus Chile · Garantiplus Colombia · Garantiplus México · Go Virtual ·
 > Invarat · Gplus Seguros**
 
-Debe **coincidir** con `project.empresa` del Gantt. (Esta lista cerrada tiene precedencia sobre
-los ejemplos de área que aparecen en el prompt entrevistador.)
+(Esta lista cerrada tiene precedencia sobre los ejemplos de área que aparecen en el prompt
+entrevistador.)
 
 ## Paso 0 — Entrada (¿continuar, ingerir o crear?)
 
@@ -133,7 +133,7 @@ los ejemplos de área que aparecen en el prompt entrevistador.)
 
 ## Flujo de edición — continuar un PRD existente (lo normal)
 
-Es el camino habitual: integrar el feedback de un transcript nuevo al PRD y poner al día el Gantt.
+Es el camino habitual: integrar el feedback de un transcript nuevo al PRD y publicarlo al repo central.
 
 1. Lee `manager/PRD.md`. Identifica el/los **transcripts nuevos** (los que no tienen
    condensado) y/o el que venga en `$ARGUMENTS`. Genera sus condensados.
@@ -144,15 +144,9 @@ Es el camino habitual: integrar el feedback de un transcript nuevo al PRD y pone
    opción múltiple** (cada contradicción/decisión con sus opciones y una recomendación — ver
    Reglas transversales). Solo tras aprobación, edita `manager/PRD.md` (cambios mínimos y
    precisos; sube la **Versión** del encabezado).
-4. **Pon al corriente el Gantt (obligatorio, misma sesión):** una vez escrito el PRD, NO
-   cierres la sesión todavía. **Carga la skill `pm-ai:pm-gantt` con la herramienta `Skill`**
-   (no basta con mencionar `/pm-gantt`) y ejecútala: el Gantt se construye **en plan mode**
-   (`EnterPlanMode`) usando **`writing-plans`** de superpowers para que **jale los cambios del
-   PRD** (nuevas tareas/fases, alcance), y solo se escribe al aprobar el plan. Los ajustes
-   finos (fechas, orden, duraciones) se revisan contigo ahí, bajo propuesta → revisión →
-   confirmación. El PRD y el Gantt se actualizan **en la misma sesión**; si por alguna razón
-   no se puede actualizar el Gantt, díselo explícitamente al desarrollador (no lo omitas en
-   silencio).
+4. **Publica al repo central (culmina la sesión):** una vez escrito el PRD, ve a
+   **«Publicación al repo central»** — espejar `manager/` (PRD + transcripts + resumidos),
+   commit y push. Terminar/ajustar el PRD **culmina con un push a GitHub**.
 
 ## Flujo de ingesta — "ya tengo un PRD existente"
 
@@ -163,7 +157,7 @@ Es el camino habitual: integrar el feedback de un transcript nuevo al PRD y pone
 3. **Propón** el PRD normalizado y, para lo que ni el PRD ni los transcripts resuelvan,
    **entrevista** con los bloques relevantes del prompt de Dani (solo lo que falte). Ante
    huecos o conflictos, **consulta con opción múltiple** (ver Reglas transversales), no asumas.
-4. Tras confirmación, escribe **`manager/PRD.md`**. Luego pon al corriente el Gantt
+4. Tras confirmación, escribe **`manager/PRD.md`**. Luego publica al repo central
    (paso 4 del Flujo de edición).
 
 ## Flujo de creación — "crear uno nuevo desde transcript/recurso"
@@ -176,8 +170,8 @@ Es el camino habitual: integrar el feedback de un transcript nuevo al PRD y pone
 3. Redacta el PRD con la estructura EXACTA de `${CLAUDE_PLUGIN_ROOT}/plantillas/PRD.md`
    (14 secciones + encabezado; condicionales solo si aplican; sin placeholders; lo indefinido
    va a la sección 14).
-4. Preséntalo para revisión; al confirmar, escribe **`manager/PRD.md`**. Luego pon al
-   corriente el Gantt (paso 4 del Flujo de edición).
+4. Preséntalo para revisión; al confirmar, escribe **`manager/PRD.md`**. Luego publica al
+   repo central (paso 4 del Flujo de edición).
 
 ## Cierre (verificación explícita)
 
@@ -185,19 +179,28 @@ Antes de dar por terminada la sesión, comprueba y reporta:
 
 1. **PRD escrito:** `manager/PRD.md` quedó guardado con la **Versión** del encabezado
    incrementada respecto a la anterior.
-2. **Gantt al corriente:** el Gantt en la DB (`pm_gantt*`) y su reflejo en el tablero
-   (`manager/gantt/index.html`) reflejan los cambios del PRD
-   (se ejecutó la skill `pm-ai:pm-gantt` en esta misma sesión). Si no aplica o no se pudo,
+2. **Publicado al repo central:** se espejó `manager/` (PRD + transcripts + resumidos), se
+   commiteó y se **pusheó** a `enginecx_prd` (ver «Publicación al repo central»). Terminar o
+   ajustar el PRD **culmina con un push a GitHub**. Si por alguna razón no se pudo pushear,
    regístralo con su razón en lugar de omitirlo.
 
-Resume el PRD resultante en pocas líneas. Recuerda cerrar el avance con **`/pm-commit`** para
-dejar git y el índice consistentes.
+Resume el PRD resultante en pocas líneas. Recuerda cerrar el avance de **código** con
+**`/pm-commit`** para dejar git y el índice consistentes.
 
-## Publicación al repo central (enginecx_prd)
+## Publicación al repo central (enginecx_prd) — CULMINA la sesión
+
+Terminar de construir o ajustar el PRD **culmina SIEMPRE con un commit + push a GitHub**: no
+des la sesión por cerrada sin haber publicado.
 
 > **Identidad git:** el bin `prd-sync` usa el repo/usuario/email/token del `.env` del plugin
 > (`ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`, `ENGINECX_PRD_GIT_EMAIL`,
 > `ENGINECX_PRD_GIT_TOKEN`). No hagas `git` manual sobre `enginecx_prd` ni uses tu identidad local.
+
+> **Qué se sube.** El espejo publica **TODO** `manager/`: el `PRD.md` **y** lo que se agregó
+> en esta sesión — los transcripts nuevos en `transcripts/` y sus condensados en
+> `transcripts-resumidos/` (además de `config.json`). Estas carpetas **NO** se ignoran en
+> `enginecx_prd`. El espejo solo descarta relleno del SO/editor (`.DS_Store`, `._*`, `Thumbs.db`,
+> `desktop.ini`, `*~`/`*.swp`).
 
 La carpeta destino es `enginecx_prd/{sistema}/PJ{prd_id}-{project_id}/` (dos niveles; el
 inferior es el espejo de `manager/`). Toma `prd_dir` de `manager/config.json`.
@@ -210,8 +213,10 @@ de texto** (no selector) pide `sistema` (folder superior: `SIGA`, `Alfa`, `Omega
 - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" ensure-repo`
 - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" resolve-id --config "manager/config.json"`
 
-Con `prd_dir` ya en `config.json`, refleja el estado y commitea en el repo central:
+Con `prd_dir` ya en `config.json`, refleja el estado y commitea en el repo central (el commit
+recoge PRD + transcripts + resumidos de una vez):
 - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`
-- `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" commit --dir "<prd_dir>" --message "feat(prd): <nombre> (<prd_dir>) — update PRD"`
-Luego **propón** el push y córrelo solo tras confirmación:
-`node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" push`.
+- `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" commit --dir "<prd_dir>" --message "feat(prd): <nombre> (<prd_dir>) — update PRD + transcripts"`
+
+Luego **propón** el push (muestra qué se subirá) y, **tras la confirmación del desarrollador**,
+córrelo para cerrar: `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" push`.
