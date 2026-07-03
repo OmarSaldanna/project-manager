@@ -83,6 +83,7 @@ export class PmRepo {
     repoUrl?: string;
     descripcion?: string;
     estado?: string;
+    prdId?: string;
   }): Promise<void> {
     const { error } = await this.sb.from("pm_projects").upsert(
       {
@@ -92,6 +93,7 @@ export class PmRepo {
         repo_url: p.repoUrl ?? null,
         descripcion: p.descripcion ?? null,
         ...(p.estado ? { estado: p.estado } : {}),
+        ...(p.prdId ? { prd_id: p.prdId } : {}),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "project_id" },
@@ -278,54 +280,36 @@ export class PmRepo {
   }
 
   /**
-   * Guarda (REEMPLAZA) el Gantt completo de un proyecto desde el JSON de gantt.js (RPC
-   * pm_gantt_guardar): upsert de cabecera + reemplazo total de tareas y objetivos, y reconcilia
-   * `empresa`→pm_projects.unidad. El % de avance NO se guarda (se deriva de los objetivos).
-   * `project` es el objeto `project` de gantt.js; `tasks` es `gantt.tasks` (con objetivos).
+   * Gantt GENERAL: planes de desarrollo agrupados por responsable + pendientes de programar
+   * (RPC pm_planes_leer). Solo lectura; enriquece cada plan por join a pm_projects (folio→prd_id).
    */
-  async guardarGantt(
-    projectId: string,
-    project: Record<string, unknown>,
-    tasks: unknown[],
-  ): Promise<{ project_id: string; tareas: number; objetivos: number }> {
-    const { data, error } = await this.sb.rpc("pm_gantt_guardar", {
-      p_project_id: projectId,
-      p_project: project,
-      p_tasks: tasks,
+  async leerPlanes(
+    estatus?: string[],
+    responsable?: string,
+  ): Promise<Record<string, unknown> | null> {
+    const { data, error } = await this.sb.rpc("pm_planes_leer", {
+      p_estatus: estatus ?? null,
+      p_responsable: responsable ?? null,
     });
-    if (error) throw new Error(`guardarGantt: ${error.message}`);
-    return data as { project_id: string; tareas: number; objetivos: number };
-  }
-
-  /** Lee el Gantt de un proyecto con la forma de window.PROJECT_DATA (project + tasks con objetivos). */
-  async leerGantt(projectId: string): Promise<Record<string, unknown> | null> {
-    const { data, error } = await this.sb.rpc("pm_gantt_leer", { p_project_id: projectId });
-    if (error) throw new Error(`leerGantt: ${error.message}`);
+    if (error) throw new Error(`leerPlanes: ${error.message}`);
     return (data as Record<string, unknown> | null) ?? null;
   }
 
-  /** Agrega o edita UN objetivo de una tarea (upsert por objetivo_id). `objetivo`: {id,titulo,descripcion?,planned?,finished?,orden?}. */
-  async guardarObjetivo(
-    projectId: string,
-    tareaId: string,
-    objetivo: Record<string, unknown>,
+  /**
+   * Programa un plan de desarrollo: escribe SOLO fecha_inicio/fecha_fin (RPC pm_plan_programar).
+   * Si fechaFin se omite, la DB la deja = fechaInicio. Fechas en ISO "YYYY-MM-DD".
+   */
+  async programarPlan(
+    id: number,
+    fechaInicio: string,
+    fechaFin?: string,
   ): Promise<Record<string, unknown>> {
-    const { data, error } = await this.sb.rpc("pm_gantt_objetivo_guardar", {
-      p_project_id: projectId,
-      p_tarea_id: tareaId,
-      p_objetivo: objetivo,
+    const { data, error } = await this.sb.rpc("pm_plan_programar", {
+      p_id: id,
+      p_fecha_inicio: fechaInicio,
+      p_fecha_fin: fechaFin ?? null,
     });
-    if (error) throw new Error(`guardarObjetivo: ${error.message}`);
-    return data as Record<string, unknown>;
-  }
-
-  /** Elimina UN objetivo por id (0 si no existía). */
-  async eliminarObjetivo(projectId: string, objetivoId: string): Promise<Record<string, unknown>> {
-    const { data, error } = await this.sb.rpc("pm_gantt_objetivo_eliminar", {
-      p_project_id: projectId,
-      p_objetivo_id: objetivoId,
-    });
-    if (error) throw new Error(`eliminarObjetivo: ${error.message}`);
+    if (error) throw new Error(`programarPlan: ${error.message}`);
     return data as Record<string, unknown>;
   }
 }
