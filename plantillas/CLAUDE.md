@@ -19,12 +19,13 @@ repositorio completos** — navegas el índice (tools `pm_*`) y lees solo lo nec
   deriva de ellos). El dashboard `manager/gantt/index.html` **embebe una copia** de la DB.
   Construye el Gantt a partir del PRD usando la skill de planeación de superpowers; sirve para planear,
   ajustar y registrar avances, y para visualizar el tablero (`manager/gantt/index.html`).
-- **`/pm-commit`** — cierra un avance: hace **commit(s) en git** e **indexa los cambios en
-  la base de datos** (`pm_index`) aplicando el criterio de Entidades de Código. Es el flujo
-  de trabajo habitual cada vez que hay avances.
-- **`/pm-trace`** — genera un **reporte HTML de bitácora** (en `manager/traces/`) con la
-  traza de cambios de una **entidad**, un **archivo** o un **commit**: línea de tiempo de
-  versiones, qué cambió y el **diff por versión**. Útil para revisar la evolución del código.
+- **`/guardar-cambios`** — guarda tu avance: lo deja registrado en el **historial (commit[s]
+  en git)** y actualiza la **memoria del proyecto** (`pm_index`) aplicando el criterio de
+  Entidades de Código. Es el flujo de trabajo habitual cada vez que hay avances.
+- **`/reporte-cambios`** — genera un **reporte HTML de bitácora** (en `manager/traces/`) con el
+  **histórico de cambios**. Por defecto apunta a **`manager/PRD.md`**; también acepta una
+  **entidad**, un **archivo** o un **commit**: línea de tiempo de versiones, qué cambió y el
+  **diff por versión**. Útil para revisar la evolución del PRD o del código.
 
 Implicación clave: el **código y la documentación se indexan** en una base de datos
 externa; por eso navegas con las tools en vez de leer todo el repo.
@@ -40,7 +41,7 @@ manager/
 ├─ transcripts/             # transcripts/documentos originales
 ├─ transcripts-resumidos/   # condensados de cada transcript (insumo del PRD)
 ├─ gantt/                   # dashboard del Gantt (index.html con datos embebidos = reflejo de la DB)
-├─ traces/                  # plantilla + bitácoras de traza generadas por /pm-trace
+├─ traces/                  # plantilla + bitácoras de traza generadas por /reporte-cambios
 └─ config.json              # identidad del proyecto (project_id, unidad, sistema, prd_id, prd_dir)
 ```
 
@@ -93,15 +94,15 @@ identidad del **`.env` del plugin**: `ENGINECX_PRD_REPO` (repo), `ENGINECX_PRD_G
 2. `pm_navegar` / `pm_buscar` → ubica el símbolo o chunk relevante (metadata, barato).
 3. Lee SOLO ese archivo/sección. `pm_traza` para la historia de un símbolo.
 
-## Trazabilidad de código (changelog y `/pm-trace`)
+## Trazabilidad de código (changelog y `/reporte-cambios`)
 
 - `pm_traza(entity_id)` es un **changelog por entidad**: cada versión trae `cambio` (qué
   cambió respecto a la anterior), `magnitud_cambio` (`cosmetico|firma|logica|mixto|eliminado`)
   y `hash_anterior` (encadena la historia). Úsalo para "¿cómo evolucionó X y qué cambió?",
   sin leer git. Con `incluir_cuerpo=true` añade el cuerpo de cada versión (para diffs).
 - Para un **reporte visual** (línea de tiempo + diff `+N −M` por versión, con modal de
-  rojo/verde) usa **`/pm-trace`** con una entidad, un archivo o un commit; queda en
-  `manager/traces/`.
+  rojo/verde) usa **`/reporte-cambios`** (por defecto apunta a `manager/PRD.md`; también acepta
+  una entidad, un archivo o un commit); queda en `manager/traces/`.
 - El `cambio`/diff se puebla **de aquí en adelante**: lo indexado antes de esta capacidad
   aparece como "diff no disponible".
 

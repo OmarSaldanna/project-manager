@@ -184,8 +184,8 @@ Antes de dar por terminada la sesión, comprueba y reporta:
    ajustar el PRD **culmina con un push a GitHub**. Si por alguna razón no se pudo pushear,
    regístralo con su razón en lugar de omitirlo.
 
-Resume el PRD resultante en pocas líneas. Recuerda cerrar el avance de **código** con
-**`/pm-commit`** para dejar git y el índice consistentes.
+Resume el PRD resultante en pocas líneas. Recuerda guardar el avance de **código** con
+**`/guardar-cambios`** para dejar el historial (git) y la memoria del proyecto (índice) consistentes.
 
 ## Publicación al repo central (enginecx_prd) — CULMINA la sesión
 
@@ -220,3 +220,17 @@ recoge PRD + transcripts + resumidos de una vez):
 
 Luego **propón** el push (muestra qué se subirá) y, **tras la confirmación del desarrollador**,
 córrelo para cerrar: `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" push`.
+
+## Paso final (OPCIONAL) — Guardar y subir los cambios
+
+Una vez publicado el PRD, ofrece al project manager guardar también el avance del proyecto
+(historial en git + memoria del proyecto). Hazlo con una **pregunta de opción múltiple (select)**:
+
+**¿Deseas guardar y subir los cambios?**
+- **Sí** — guardar cambios con `/guardar-cambios`.
+- **No** — no guardar ni subir cambios por ahora.
+
+- Si responde **Sí**, invoca el comando **`/guardar-cambios`** y deja que ese flujo se encargue
+  (propuesta → revisión → confirmación de archivos y mensaje, commit[s] en git e indexación).
+- Si responde **No**, cierra la sesión sin guardar; recuérdale que puede correr
+  `/guardar-cambios` cuando quiera para dejar el historial y la memoria del proyecto consistentes.

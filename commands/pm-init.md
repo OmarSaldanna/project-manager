@@ -6,7 +6,7 @@ allowed-tools: Read, Write, Edit, Bash, mcp__pm-ai__pm_indexar, mcp__pm-ai__pm_p
 
 Eres el **Project Manager con IA** inicializando PM·AI en este proyecto. Funciona tanto en
 un **proyecto nuevo** (carpeta casi vacía) como en una **base de código ya construida**. A
-diferencia de `/pm-commit` (que se basa en `git status`), aquí lees el proyecto **completo**
+diferencia de `/guardar-cambios` (que se basa en `git status`), aquí lees el proyecto **completo**
 para el primer indexado. La mecánica de indexado está en `docs/entidades-y-indexacion.md`.
 
 Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
@@ -21,7 +21,7 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
 
 1. Determina la raíz del repo: `git rev-parse --show-toplevel`.
    - Si **no** es un repo git, ofrece inicializarlo (`git init`); se necesita para listar
-     respetando `.gitignore` y para `/pm-commit` después.
+     respetando `.gitignore` y para `/guardar-cambios` después.
 2. Crea `manager/` y copia desde el plugin (NO se edita su contenido):
    - `mkdir -p manager`
    - `cp -R "${CLAUDE_PLUGIN_ROOT}/gantt" manager/gantt`
@@ -29,7 +29,7 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
      reflejo de la DB; ya no hay `gantt.js`). El Gantt vive en la DB (`pm_gantt*`); `/pm-gantt`
      lo gestiona y repinta el HTML.
    - `mkdir -p manager/traces && cp "${CLAUDE_PLUGIN_ROOT}/trace/trace.html" manager/traces/trace.html`
-     (deja lista la **plantilla de bitácoras de traza**; `/pm-trace` generará al lado copias
+     (deja lista la **plantilla de bitácoras de traza**; `/reporte-cambios` generará al lado copias
      `trace_*.html` con los datos de cada reporte).
    - `mkdir -p manager/transcripts manager/transcripts-resumidos`
      (carpetas de la función de PRD: los **transcripts originales** y sus **condensados**; el
@@ -119,7 +119,7 @@ Si `manager/config.json` ya existe con estos campos, **respétalos y NO re-pregu
 
 ## Paso 4 — Listado completo de archivos a procesar
 
-A diferencia de `/pm-commit`, aquí se lee TODO el proyecto, **excepto lo que esté en
+A diferencia de `/guardar-cambios`, aquí se lee TODO el proyecto, **excepto lo que esté en
 `.gitignore`** (incluido `manager/`).
 
 1. Lista los archivos que git considera (respeta `.gitignore` nativamente):
@@ -197,8 +197,8 @@ SOLO tras el **sí explícito** del Paso 4.5, indexa el proyecto completo:
 - Resume: qué se creó (`manager/`, `CLAUDE.md`, `.gitignore`) y los totales de
   `pm_indexar` (altas / versiones / sin-cambio / tombstones).
 - Sugiere los siguientes pasos: **`/pm-prd`** para el PRD, **`/pm-gantt`** para la
-  planeación, **`/pm-commit`** para los avances posteriores y **`/pm-trace`** para generar
-  bitácoras de la evolución del código.
+  planeación, **`/guardar-cambios`** para los avances posteriores y **`/reporte-cambios`** para
+  generar bitácoras del histórico de cambios (del PRD o del código).
 
 ## Paso 7 — Publicar en el repo central de PRDs (enginecx_prd)
 

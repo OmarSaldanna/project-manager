@@ -20,8 +20,8 @@ agente navega y mantiene el proyecto **sin leer repositorios completos**.
 | `/pm-init` | Inicializa PM·AI en un repo e indexa el baseline. |
 | `/pm-prd` | Construye/mantiene el PRD (`manager/PRD.md`). |
 | `/pm-gantt` | Planeación con fechas (Gantt, sprints, objetivos). |
-| `/pm-commit` | Cierra un avance: commit en git + indexado del cambio. |
-| `/pm-trace` | Reporte HTML de la traza de cambios de una entidad/archivo/commit. |
+| `/guardar-cambios` | Guarda tu avance: registro en el historial (git) + actualización de la memoria del proyecto (índice). |
+| `/reporte-cambios` | Reporte HTML del histórico de cambios (por defecto `manager/PRD.md`; también entidad/archivo/commit). |
 
 ## Arquitectura
 
