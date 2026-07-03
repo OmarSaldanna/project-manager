@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gantt General · Planes de desarrollo</title>
+<style>
+  /* ===== Tokens — boceto de dibujo de arquitectura (papel de dibujo / blueprint) ===== */
+  :root {
+    --bg: #efece3;            /* papel */
+    --surface: #f7f5ee;       /* hoja de dibujo */
+    --surface-2: #efece2;
+    --ink: #2b3242;           /* tinta */
+    --ink-soft: #5d6678;
+    --ink-faint: #99a0ad;
+    --line: #c9c4b4;          /* línea de dibujo (hairline) */
+    --grid: #e0dccf;          /* retícula de papel milimétrico */
+    --accent: #2f5fd0;        /* azul de plano (Aprobado) */
+    --accent-soft: #dbe4fb;
+    --curso: #c98a1d;         /* ámbar (En curso) */
+    --curso-soft: #f4e6c9;
+    --done: #1f8a5b;          /* verde (Finalizado) */
+    --done-soft: #d8efe3;
+    --today: #d2603a;         /* línea de hoy (rojo de plano) */
+    --hatch: rgba(43,50,66,.10); /* rayado de zona no hábil */
+    --shadow: 0 1px 2px rgba(40,40,30,.06), 0 10px 30px rgba(40,40,30,.06);
+    --radius: 3px;            /* esquinas casi rectas (técnico) */
+    --label-w: 232px;
+    --day-w: 30px;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  html[data-theme="dark"] {
+    --bg: #0c1f38;            /* blueprint */
+    --surface: #102744;
+    --surface-2: #15314f;
+    --ink: #d9e6fb;
+    --ink-soft: #9fb4d2;
+    --ink-faint: #6079a0;
+    --line: #2b4566;
+    --grid: rgba(120,160,220,.13);
+    --accent: #6da2ff;
+    --accent-soft: #1d3357;
+    --curso: #f2b953;
+    --curso-soft: #3a2c14;
+    --done: #4fcf95;
+    --done-soft: #123a30;
+    --today: #ff9f6b;
+    --hatch: rgba(160,195,245,.14);
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: var(--sans);
+    color: var(--ink);
+    background-color: var(--bg);   /* fondo liso */
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color .3s ease, color .3s ease;
+  }
+  .wrap { max-width: 1320px; margin: 0 auto; padding: 0 28px; }
+
+  /* lámpara claro/oscuro */
+  .lamp-btn {
+    position: fixed; top: 20px; right: 24px; z-index: 50;
+    width: 42px; height: 42px; border-radius: 50%;
+    border: 1px solid var(--line); background: var(--surface);
+    box-shadow: var(--shadow); cursor: pointer; display: grid; place-items: center;
+    transition: transform .15s ease;
+  }
+  .lamp-btn:hover { transform: translateY(-1px); }
+  .lamp-btn svg { width: 20px; height: 20px; }
+  .lamp-body { fill: none; stroke: var(--ink-soft); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  html[data-theme="dark"] .lamp-glow { fill: #ffd25e; filter: drop-shadow(0 0 6px rgba(255,210,94,.8)); }
+  html[data-theme="dark"] .lamp-body { stroke: #ffd25e; }
+  .lamp-glow { fill: transparent; }
+
+  /* ===== Cabecera (bloque de rótulo del plano) ===== */
+  .hero { padding: 44px 0 30px; }
+  .eyebrow {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase;
+    color: var(--ink-faint); display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-bottom: 10px;
+  }
+  .pill {
+    font-family: var(--mono); font-size: 11px; letter-spacing: .04em; padding: 2px 9px;
+    border: 1px solid var(--accent); color: var(--accent); border-radius: 999px; text-transform: none;
+  }
+  h1.title { font-size: clamp(24px, 3.4vw, 34px); margin: 0 0 8px; letter-spacing: -.01em; font-weight: 700; }
+  .desc { color: var(--ink-soft); max-width: 740px; font-size: 15px; margin: 0 0 20px; }
+
+  .meta {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden;
+    background: var(--surface);
+  }
+  .meta .cell { padding: 12px 16px; border-right: 1px solid var(--line); }
+  .meta .cell:last-child { border-right: 0; }
+  .meta .k { font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); margin-bottom: 4px; }
+  .meta .v { font-size: 14px; font-weight: 600; }
+
+  /* ===== Lámina del Gantt ===== */
+  .sheet {
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    box-shadow: var(--shadow); overflow: hidden; margin-top: 26px;
+  }
+  .sheet-head {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    padding: 14px 18px; border-bottom: 1px solid var(--line);
+  }
+  .sheet-head h2 { margin: 0; font-size: 14px; font-weight: 650; letter-spacing: .02em; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; color: var(--ink-soft); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i { width: 20px; height: 10px; display: inline-block; border: 1px solid var(--ink); border-radius: 2px; }
+  .legend i.aprobado { background: var(--accent); border-color: var(--accent); }
+  .legend i.curso { background: var(--curso); border-color: var(--curso); }
+  .legend i.done { background: var(--done); border-color: var(--done); }
+  .legend i.wknd { border: 1px solid var(--line); background-image: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 6px); }
+
+  .board { overflow: auto; }
+
+  /* eje superior: meses + días */
+  .axis { display: flex; position: sticky; top: 0; z-index: 6; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .axis .corner {
+    width: var(--label-w); flex: none; position: sticky; left: 0; z-index: 2; background: var(--surface);
+    border-right: 1px solid var(--line); display: flex; align-items: flex-end; padding: 6px 16px;
+    font-family: var(--mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint);
+  }
+  .axis .scale { flex: none; }
+  .axis .months { display: flex; }
+  .axis .month { border-right: 1px solid var(--line); font-family: var(--mono); font-size: 11px; font-weight: 600;
+    color: var(--ink-soft); padding: 6px 8px; white-space: nowrap; overflow: hidden; }
+  .axis .daynums { display: flex; }
+  .axis .dn { flex: none; width: var(--day-w); text-align: center; font-family: var(--mono); font-size: 10.5px;
+    color: var(--ink-faint); padding: 3px 0 5px; border-right: 1px solid var(--grid); }
+  .axis .dn.wknd { color: var(--ink-faint); background-image: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 6px); }
+  .axis .dn.today { color: var(--today); font-weight: 700; }
+
+  /* filas */
+  .row { display: flex; }
+  .row:not(:last-child) { border-bottom: 1px solid var(--grid); }
+  .row .label {
+    width: var(--label-w); flex: none; position: sticky; left: 0; z-index: 3; background: var(--surface);
+    border-right: 1px solid var(--line); padding: 9px 16px; display: flex; flex-direction: column; justify-content: center;
+  }
+  .row .label .t { font-size: 13px; font-weight: 600; line-height: 1.25; }
+  .row .label .s { font-family: var(--mono); font-size: 10.5px; color: var(--ink-faint); margin-top: 2px; }
+
+  /* cabecera de grupo (responsable) */
+  .row.group-head .label { background: var(--surface-2); }
+  .row.group-head .label .t {
+    font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  .row.group-head .track { background: var(--surface-2); }
+
+  .track { position: relative; min-height: 42px; flex: none; }
+  .grid { position: absolute; inset: 0; display: flex; pointer-events: none; }
+  .grid .day { flex: none; width: var(--day-w); border-right: 1px solid var(--grid); }
+  .grid .day.wknd { background-image: repeating-linear-gradient(45deg, var(--hatch) 0 2px, transparent 2px 6px); }
+
+  .today-line { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1.5px dashed var(--today); z-index: 4; pointer-events: none; }
+
+  /* barras: rectángulos de dibujo (contorno de tinta + relleno), color por estatus */
+  .bar {
+    position: absolute; top: 50%; transform: translateY(-50%); height: 20px;
+    border: 1.4px solid var(--ink); border-radius: var(--radius); background: var(--surface);
+    overflow: hidden; z-index: 3; min-width: 6px;
+  }
+  .bar .fill { position: absolute; inset: 0; width: 100%; background: var(--accent); opacity: .9; }
+  .bar.curso { border-color: var(--curso); }
+  .bar.curso .fill { background: var(--curso); }
+  .bar.done { border-color: var(--done); }
+  .bar.done .fill { background: var(--done); }
+  .bar .pct { position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+    font-family: var(--mono); font-size: 10px; color: var(--ink); mix-blend-mode: normal; white-space: nowrap; }
+
+  /* ===== Pendientes de programar (lista tipo checklist, sin estado "hecho") ===== */
+  .pending-section { padding: 44px 0 80px; }
+  .pending-head { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  .pending-head h2 { margin: 0; font-size: 22px; letter-spacing: -.01em; }
+  .pending-count { font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+
+  .checklist { list-style: none; margin: 14px 0 0; padding: 0;
+    border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: hidden; }
+  .item { display: flex; gap: 13px; align-items: flex-start; padding: 13px 16px; }
+  .item:not(:last-child) { border-bottom: 1px dashed var(--grid); }
+  .item-body { display: flex; flex-direction: column; gap: 3px; }
+  .item-body .it { display: block; font-size: 14.5px; font-weight: 600; line-height: 1.3; }
+  .item-body .id { display: block; font-size: 13px; color: var(--ink-soft); line-height: 1.35; }
+
+  .loading, .error { min-height: 50vh; display: grid; place-items: center; text-align: center; color: var(--ink-faint); padding: 40px; }
+  .error code { background: var(--surface-2); padding: 2px 8px; border-radius: 4px; color: var(--ink); }
+
+  footer.foot { border-top: 1px solid var(--line); color: var(--ink-faint); font-family: var(--mono);
+    font-size: 11px; padding: 18px 0 50px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+
+  @media (max-width: 640px) { :root { --label-w: 150px; } .wrap { padding: 0 16px; } }
+</style>
+</head>
+<body>
+
+<button class="lamp-btn" id="lampBtn" aria-label="Modo claro/oscuro" title="Modo claro / oscuro">
+  <svg viewBox="0 0 24 24" aria-hidden="true">
+    <circle class="lamp-glow" cx="12" cy="9" r="5.2"></circle>
+    <path class="lamp-body" d="M12 3.2a5.8 5.8 0 0 0-3.4 10.5c.5.4.8.9.9 1.5l.2 1.1h4.6l.2-1.1c.1-.6.4-1.1.9-1.5A5.8 5.8 0 0 0 12 3.2Z"></path>
+    <path class="lamp-body" d="M9.7 18.6h4.6M10.3 20.6h3.4"></path>
+  </svg>
+</button>
+
+<main id="app"><div class="loading">Cargando planes de desarrollo…</div></main>
+
+<!-- ============================================================================
+     DATOS DEL GANTT GENERAL — REFLEJO DE LA DB (tabla pm_plan_desarrollo global).
+     Es una copia en texto plano de lo que devuelve el RPC pm_planes_leer(): planes
+     de desarrollo agrupados por responsable, más los pendientes de programar
+     (sin fechas). NO editar a mano: lo (re)pinta /pm-gantt tras cada cambio en la
+     base de datos.
+     ============================================================================ -->
+<script id="general-data">
+window.GENERAL_DATA = {
+  "generado": "2026-07-15 10:00",
+  "hoy": "2026-07-15",
+  "responsables": [
+    {
+      "nombre": "Alexis",
+      "planes": [
+        {
+          "id": "p1",
+          "folio": "ECX-001",
+          "nombre": "Portal de Clientes",
+          "estatus": "Aprobado",
+          "responsable": "Alexis",
+          "dias": 20,
+          "fecha_inicio": "2026-07-01",
+          "fecha_fin": "2026-07-20",
+          "project_id": "portal-clientes",
+          "unidad": "Desarrollo"
+        }
+      ]
+    },
+    {
+      "nombre": "Alejandro",
+      "planes": [
+        {
+          "id": "p2",
+          "folio": "ECX-014",
+          "nombre": "App de Inventario",
+          "estatus": "En curso",
+          "responsable": "Alejandro",
+          "dias": 15,
+          "fecha_inicio": "2026-07-16",
+          "fecha_fin": "2026-08-05",
+          "project_id": "app-inventario",
+          "unidad": "Operaciones"
+        }
+      ]
+    }
+  ],
+  "pendientes": [
+    {
+      "id": "p3",
+      "folio": "ECX-022",
+      "nombre": "Rediseño de Checkout",
+      "estatus": "No aprobado",
+      "responsable": "Alexis",
+      "dias": 12
+    }
+  ]
+};
+</script>
+<script>
+/* ============================================================
+   Tablero GENERAL por DÍAS, estética de boceto arquitectónico.
+   - Filas agrupadas por responsable: una cabecera por persona y, debajo,
+     una fila por cada plan de desarrollo (PRD) con fecha_inicio/fecha_fin.
+   - Fines de semana = columnas rayadas (no hábiles).
+   - La línea vertical marca el día "hoy" tomado de GENERAL_DATA.hoy (no
+     Date.now()): el tablero es determinista respecto al snapshot de la DB.
+   - Sin objetivos ni avance derivado (eso es del particular /pm-gantt por
+     proyecto, ver gantt/index.html): cada barra es un bloque sólido
+     coloreado por `estatus`. Los planes sin fecha van a "Pendientes de
+     programar".
+   No se edita este JS; los DATOS viven embebidos arriba en
+   <script id="general-data"> (window.GENERAL_DATA), como reflejo de la DB
+   (pm_plan_desarrollo vía el RPC pm_planes_leer).
+   ============================================================ */
+
+const root = document.documentElement;
+const saved = localStorage.getItem('gantt-theme');
+if (saved) root.setAttribute('data-theme', saved);
+document.getElementById('lampBtn').addEventListener('click', () => {
+  const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+  root.setAttribute('data-theme', next);
+  localStorage.setItem('gantt-theme', next);
+});
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const DAY = 86400000;
+const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MARGEN_DIAS = 3; // margen visual a cada lado del rango real de fechas
+
+// fecha local a medianoche (consistente para comparar días)
+const parseD = s => { const [y,m,d] = String(s||'').split('-').map(Number); return (y&&m&&d) ? new Date(y, m-1, d).getTime() : null; };
+const midnight = ms => { const d = new Date(ms); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); };
+const addDays = (ms, n) => { const d = new Date(ms); return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n).getTime(); };
+const fmt = ms => { const d = new Date(ms); return `${String(d.getDate()).padStart(2,'0')} ${MESES[d.getMonth()].slice(0,3)} ${d.getFullYear()}`; };
+const fmtCorto = ms => { const d = new Date(ms); return `${String(d.getDate()).padStart(2,'0')} ${MESES[d.getMonth()].slice(0,3)}`; };
+const esFinde = d => { const w = d.getDay(); return w === 0 || w === 6; };
+
+// clase de color de barra según estatus del plan
+const claseEstatus = estatus => estatus === 'En curso' ? 'curso' : (estatus === 'Finalizado' ? 'done' : '');
+
+function render(data) {
+  const responsables = data.responsables || [];
+  const pendientes = data.pendientes || [];
+
+  // aplanar los planes con fecha (para el rango del eje y las métricas)
+  const planesConFecha = [];
+  responsables.forEach(r => (r.planes || []).forEach(pl => {
+    const s = parseD(pl.fecha_inicio), e = parseD(pl.fecha_fin);
+    if (s !== null && e !== null) planesConFecha.push({ pl, resp: r.nombre, s, e });
+  }));
+
+  const rangeMinT = planesConFecha.length ? Math.min(...planesConFecha.map(x => x.s)) : null;
+  const rangeMaxT = planesConFecha.length ? Math.max(...planesConFecha.map(x => x.e)) : null;
+  const hoyMs = parseD(data.hoy);
+  const hoy = hoyMs !== null ? midnight(hoyMs) : midnight(Date.now());
+
+  const minT = rangeMinT !== null ? addDays(rangeMinT, -MARGEN_DIAS) : hoy;
+  const maxT = rangeMaxT !== null ? addDays(rangeMaxT, MARGEN_DIAS) : addDays(minT, 1);
+
+  // lista de días [minT..maxT] sin deriva por DST (se avanza por componentes)
+  let maxTExt = maxT;
+  const days = [];
+  for (let d = new Date(minT); d.getTime() <= maxTExt; d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1)) days.push(new Date(d));
+  const idxOf = ms => { const t = midnight(ms); return Math.round((t - minT) / DAY); };
+
+  // métricas de cabecera
+  const bizDias = days.filter(d => !esFinde(d)).length;
+  const periodo = rangeMinT !== null ? `${fmtCorto(rangeMinT)} – ${fmt(rangeMaxT)}` : '—';
+
+  // HOY (tomado de GENERAL_DATA.hoy): índice y posición
+  const hoyIdx = (hoy >= minT && hoy <= maxT) ? idxOf(hoy) : null;
+  const todayHtml = hoyIdx !== null
+    ? `<div class="today-line" style="left:calc(var(--day-w) * ${hoyIdx} + var(--day-w)/2)"></div>` : '';
+
+  // eje: meses (agrupando días) y números de día — todo derivado de `days`,
+  // empaquetado en una función para poder regenerarlo si extendemos el tail.
+  const buildAxis = (dd) => {
+    let months = [];
+    dd.forEach(d => {
+      const key = d.getFullYear() + '-' + d.getMonth();
+      const last = months[months.length - 1];
+      if (last && last.key === key) last.n++;
+      else months.push({ key, n: 1, label: `${MESES[d.getMonth()]} ${d.getFullYear()}` });
+    });
+    const monthsHtml = months.map(m => `<div class="month" style="width:calc(var(--day-w) * ${m.n})">${esc(m.label)}</div>`).join('');
+    const dayNumsHtml = dd.map((d, i) => {
+      const cls = ['dn']; if (esFinde(d)) cls.push('wknd'); if (hoyIdx === i) cls.push('today');
+      return `<div class="${cls.join(' ')}">${d.getDate()}</div>`;
+    }).join('');
+    const gridHtml = dd.map(d => `<div class="day ${esFinde(d) ? 'wknd' : ''}"></div>`).join('');
+    const trackW = `calc(var(--day-w) * ${dd.length})`;
+    return { monthsHtml, dayNumsHtml, gridHtml, trackW };
+  };
+  let { monthsHtml, dayNumsHtml, gridHtml, trackW } = buildAxis(days);
+
+  // filas: cabecera por responsable + una fila por plan con fecha
+  const rows = responsables.map(r => {
+    const planes = r.planes || [];
+    const planesFechados = planes.filter(pl => parseD(pl.fecha_inicio) !== null && parseD(pl.fecha_fin) !== null);
+    const head = `<div class="row group-head">
+      <div class="label"><span class="t">${esc(r.nombre || '—')}</span><span class="s">${planesFechados.length} plan${planesFechados.length === 1 ? '' : 'es'}</span></div>
+      <div class="track" style="width:${trackW}">
+        <div class="grid">${gridHtml}</div>${todayHtml}
+      </div></div>`;
+
+    const filas = planesFechados.map(pl => {
+      const s = parseD(pl.fecha_inicio), e = parseD(pl.fecha_fin);
+      const li = idxOf(s);
+      const span = idxOf(e) - idxOf(s) + 1;
+      // días hábiles del plan (para la etiqueta)
+      let bd = 0; for (let d = new Date(s); d.getTime() <= e; d = new Date(d.getFullYear(), d.getMonth(), d.getDate()+1)) if (!esFinde(d)) bd++;
+      const titulo = `PRD - ${pl.folio}${pl.nombre ? ` · ${pl.nombre}` : ''}`;
+      const sub = [pl.estatus, `${bd} dh`, `${fmtCorto(s)}–${fmtCorto(e)}`].filter(Boolean).join(' · ');
+      const cls = claseEstatus(pl.estatus);
+      const bar = `<div class="bar ${cls}" style="left:calc(var(--day-w) * ${li});width:calc(var(--day-w) * ${span})">
+              <div class="fill"></div><span class="pct">${esc(pl.estatus || '')}</span></div>`;
+      return `<div class="row">
+        <div class="label"><span class="t">${esc(titulo)}</span><span class="s">${esc(sub)}</span></div>
+        <div class="track" style="width:${trackW}">
+          <div class="grid">${gridHtml}</div>${todayHtml}${bar}
+        </div></div>`;
+    }).join('');
+
+    return head + filas;
+  }).join('');
+
+  app_innerHTML(`
+  <section class="hero"><div class="wrap">
+    <div class="eyebrow"><span>PM·AI</span><span class="pill">Gantt General</span></div>
+    <h1 class="title">Planes de desarrollo por responsable</h1>
+    <p class="desc">Vista consolidada de los planes de desarrollo (PRD) de todos los proyectos, agrupados por responsable, sobre un calendario de días hábiles.</p>
+    <div class="meta">
+      <div class="cell"><div class="k">Generado</div><div class="v">${esc(data.generado || '—')}</div></div>
+      <div class="cell"><div class="k">Hoy</div><div class="v">${esc(data.hoy || '—')}</div></div>
+      <div class="cell"><div class="k">Responsables</div><div class="v">${responsables.length}</div></div>
+      <div class="cell"><div class="k">Planes programados</div><div class="v">${planesConFecha.length}</div></div>
+      <div class="cell"><div class="k">Pendientes</div><div class="v">${pendientes.length}</div></div>
+      <div class="cell"><div class="k">Periodo</div><div class="v">${esc(periodo)}</div></div>
+      <div class="cell"><div class="k">Días hábiles</div><div class="v">${bizDias}</div></div>
+    </div>
+  </div></section>
+
+  <div class="wrap">
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2>Cronograma · días hábiles (fin de semana rayado)</h2>
+        <div class="legend">
+          <span><i class="aprobado"></i> Aprobado</span>
+          <span><i class="curso"></i> En curso</span>
+          <span><i class="done"></i> Finalizado</span>
+          <span><i class="wknd"></i> No hábil</span>
+        </div>
+      </div>
+      <div class="board">
+        <div class="axis">
+          <div class="corner">Responsable / PRD</div>
+          <div class="scale" style="width:${trackW}">
+            <div class="months">${monthsHtml}</div>
+            <div class="daynums">${dayNumsHtml}</div>
+          </div>
+        </div>
+        ${rows}
+      </div>
+    </div>
+  </div>
+
+  <section class="pending-section"><div class="wrap" id="pendWrap"></div></section>
+
+  <div class="wrap"><footer class="foot"><span>Gantt general · Planes de desarrollo</span><span>Generado: ${esc(data.generado || '—')}</span></footer></div>
+  `);
+
+  buildPendientes(data);
+
+  // ── Relleno del tail: continuar el calendario hasta llenar el ancho visible ──
+  // Tras insertar el DOM medimos el ancho real disponible para el track de días
+  // (el .board menos la columna de etiquetas) y, si sobra espacio, extendemos
+  // `days` con días de calendario consecutivos hasta cubrirlo, sin desbordar.
+  // `minT` no cambia, así que idxOf, la línea de hoy y las barras siguen alineados.
+  function fillTail(retry) {
+    const board = document.querySelector('.board');
+    if (!board) return;
+    const cs = getComputedStyle(root);
+    const dayWpx = parseFloat(cs.getPropertyValue('--day-w')) || 30;
+    const labelWpx = parseFloat(cs.getPropertyValue('--label-w')) || 232;
+    // Ancho REAL del .board (sub-pixel). getBoundingClientRect evita el redondeo
+    // de clientWidth y refleja el ancho de contenido tras restar bordes.
+    const rect = board.getBoundingClientRect();
+    const innerW = rect.width - (board.offsetWidth - board.clientWidth); // descuenta bordes/scrollbar
+    const boardW = innerW > 0 ? innerW : board.clientWidth;
+    // Si el layout aún no está listo (board sin ancho), reintenta en el próximo frame.
+    // Este es el caso que dejaba el calendario sin extender (espacio vacío a la derecha).
+    if (!(boardW > 0) || !(dayWpx > 0)) {
+      if (!retry) requestAnimationFrame(() => fillTail(true));
+      return;
+    }
+    // ancho visible del área de días (sin el panel de etiquetas, fijo a la izquierda)
+    const availPx = boardW - labelWpx;
+    if (!(availPx > 0)) return;
+    // cuántos días caben sin desbordar; +1e-3 absorbe el error sub-pixel del borde
+    // derecho para que el último día alcance el borde del tablero sin provocar scroll.
+    const cap = Math.floor((availPx + 0.5) / dayWpx);
+    if (days.length >= cap) return; // ya llena/excede: no tocar (caso normal)
+
+    // extender el tail: días consecutivos a partir del día siguiente a maxTExt.
+    // minT NO cambia: barras, línea de hoy y rejilla siguen alineadas.
+    let d = new Date(maxTExt);
+    while (days.length < cap) {
+      d = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+      days.push(new Date(d));
+    }
+    maxTExt = days[days.length - 1].getTime();
+
+    // recomputar HTML derivado y aplicarlo en sitio
+    const ax = buildAxis(days);
+    const scale = board.querySelector('.axis .scale');
+    if (scale) {
+      scale.style.width = ax.trackW;
+      const monthsEl = scale.querySelector('.months');
+      const daynumsEl = scale.querySelector('.daynums');
+      if (monthsEl) monthsEl.innerHTML = ax.monthsHtml;
+      if (daynumsEl) daynumsEl.innerHTML = ax.dayNumsHtml;
+    }
+    board.querySelectorAll('.row .track').forEach(tr => {
+      tr.style.width = ax.trackW;
+      const g = tr.querySelector('.grid');
+      if (g) g.innerHTML = ax.gridHtml;
+    });
+  }
+  // Primer intento sincrónico + reintento en el próximo frame por si el layout
+  // (y --label-w / --day-w) aún no estaban resueltos en la medición inicial.
+  fillTail();
+  requestAnimationFrame(() => fillTail(true));
+  // recalcular en resize sin romper nada (idempotente: solo crece el tail)
+  let _rt;
+  window.addEventListener('resize', () => { clearTimeout(_rt); _rt = setTimeout(() => fillTail(true), 150); });
+}
+
+function buildPendientes(data) {
+  const pendientes = data.pendientes || [];
+  const items = pendientes.map(pe => {
+    const titulo = `PRD - ${pe.folio}${pe.nombre ? ` · ${pe.nombre}` : ''}`;
+    const dias = (pe.dias !== null && pe.dias !== undefined) ? `${pe.dias} días est.` : 'sin estimar';
+    const sub = [pe.responsable || '—', pe.estatus, dias].filter(Boolean).join(' · ');
+    return `<li class="item">
+      <span class="item-body"><span class="it">${esc(titulo)}</span><span class="id">${esc(sub)}</span></span>
+    </li>`;
+  }).join('');
+
+  document.getElementById('pendWrap').innerHTML = `
+    <div class="pending-head"><h2>Pendientes de programar</h2><span class="pending-count">${pendientes.length}</span></div>
+    ${items ? `<ul class="checklist">${items}</ul>` : '<p style="color:var(--ink-faint)">Sin pendientes.</p>'}`;
+}
+
+function app_innerHTML(html) { document.getElementById('app').innerHTML = html; }
+
+if (window.GENERAL_DATA) {
+  render(window.GENERAL_DATA);
+} else {
+  document.getElementById('app').innerHTML = `<div class="error"><div>
+    <p>No se encontró el contenido de los planes de desarrollo.</p>
+    <p>Falta el bloque <code>&lt;script id="general-data"&gt;</code> con <code>window.GENERAL_DATA</code> (lo pinta <code>/pm-gantt</code> desde la DB).</p>
+  </div></div>`;
+}
+</script>
+</body>
+</html>
