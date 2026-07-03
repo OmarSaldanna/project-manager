@@ -163,6 +163,7 @@ server.registerTool(
       nombre: z.string().optional(),
       unidad: z.string().optional(),
       repo_url: z.string().optional(),
+      prd_id: z.string().optional(),
       repo_root: z.string().describe("Ruta absoluta del repo; las rutas de 'files' son relativas a esta."),
       commit_sha: z.string(),
       created_at: z.string().optional().describe("ISO; por defecto, ahora."),
@@ -172,12 +173,13 @@ server.registerTool(
         .describe("Archivos acordados (ruta relativa al repo). deleted:true si se eliminaron."),
     },
   },
-  async ({ project_id, nombre, unidad, repo_url, repo_root, commit_sha, created_at, files }) => {
+  async ({ project_id, nombre, unidad, repo_url, prd_id, repo_root, commit_sha, created_at, files }) => {
     await repo.registrarProyecto({
       projectId: project_id,
       nombre: nombre ?? project_id,
       unidad,
       repoUrl: repo_url,
+      prdId: prd_id,
     });
     const createdAt = created_at ?? new Date().toISOString();
     const changes: FileChange[] = files.map((f) => {
@@ -205,77 +207,45 @@ server.registerTool(
   },
 );
 
-// Persistencia del Gantt (pm-gantt): guarda en la DB lo que vive en gantt.js, colgado del
-// MISMO project_id que el índice de código. Reemplaza cabecera + tareas + objetivos; el % de
-// avance se DERIVA de los objetivos (vista pm_gantt_tarea_avance). Reconcilia empresa→unidad.
+// Gantt GENERAL (pm-gantt): lee los planes de desarrollo agrupados por responsable + pendientes.
+// Solo lectura; enriquece por join a pm_projects (folio_prd → prd_id → project_id → pm_index).
 server.registerTool(
-  "pm_gantt_guardar",
+  "pm_planes_leer",
   {
-    title: "Guardar Gantt en la DB",
+    title: "Leer planes de desarrollo (gantt general)",
     description:
-      "Persiste el Gantt de un proyecto (lo que vive en gantt.js) en la base de datos, colgado " +
-      "del mismo project_id que el índice de código. REEMPLAZA cabecera + tareas + objetivos. " +
-      "Úsalo desde /pm-gantt DESPUÉS de escribir gantt.js para mantener DB y archivo en sync. " +
-      "El % de avance de cada tarea NO se guarda: se deriva de sus objetivos terminados.",
+      "Devuelve los planes de desarrollo (tabla global pm_plan_desarrollo) AGRUPADOS por " +
+      "responsable, más la lista de 'pendientes' (aprobados sin fecha). Cada plan viene " +
+      "enriquecido por join a pm_projects (nombre, unidad, project_id) cuando el folio empata " +
+      "un prd_id. Úsalo desde /pm-gantt para consultar y para pintar manager/gantt/general.html. " +
+      "Filtra por estatus (p.ej. ['Aprobado']) o responsable.",
     inputSchema: {
-      project_id: z.string(),
-      project: z
-        .record(z.any())
-        .describe("Objeto `project` de gantt.js (incluye empresa y status{done,inProgress})."),
-      tasks: z
-        .array(z.any())
-        .describe("`gantt.tasks` de gantt.js: cada tarea con su arreglo `objetivos`."),
+      estatus: z.array(z.string()).optional(),
+      responsable: z.string().optional(),
     },
   },
-  async ({ project_id, project, tasks }) =>
-    json(await repo.guardarGantt(project_id, project as Record<string, unknown>, tasks)),
+  async ({ estatus, responsable }) => json(await repo.leerPlanes(estatus, responsable)),
 );
 
-// Lee el Gantt de la DB con la forma de window.PROJECT_DATA. Es la fuente para "pintar" el
-// bloque de datos embebido en el HTML del dashboard (reflejo de la DB).
+// Programar un plan: escribe SOLO fecha_inicio/fecha_fin. Ninguna otra columna es escribible.
 server.registerTool(
-  "pm_gantt_leer",
+  "pm_plan_programar",
   {
-    title: "Leer Gantt de la DB",
+    title: "Programar plan (asignar fechas)",
     description:
-      "Devuelve el Gantt de un proyecto (cabecera + tareas con objetivos anidados) con la MISMA " +
-      "forma que window.PROJECT_DATA. Úsalo para reflejar la DB en el bloque de datos del HTML del " +
-      "dashboard. Las fechas vienen como 'YYYY-MM-DD'; empresa = pm_projects.unidad.",
-    inputSchema: { project_id: z.string() },
-  },
-  async ({ project_id }) => json(await repo.leerGantt(project_id)),
-);
-
-// Agrega/edita UN objetivo (upsert). El avance de su tarea se recalcula solo (vista).
-server.registerTool(
-  "pm_gantt_objetivo_guardar",
-  {
-    title: "Guardar objetivo (add/edit)",
-    description:
-      "Agrega o edita UN objetivo de una tarea en la DB (upsert por objetivo_id). La tarea debe " +
-      "existir. `objetivo`: { id, titulo, descripcion?, planned?, finished? (YYYY-MM-DD), orden? }. " +
-      "El % de avance de la tarea se deriva solo. Tras editar objetivos, vuelve a pintar el HTML.",
+      "Asigna fechas a UN plan de desarrollo por su id: escribe SOLO fecha_inicio y fecha_fin " +
+      "(YYYY-MM-DD). Es la ÚNICA escritura que /pm-gantt puede hacer sobre la tabla; nunca toca " +
+      "estatus/responsable/dias/folio. Si omites fecha_fin queda = fecha_inicio (1 día); para " +
+      "rangos multi-día calcula tú las fechas en días hábiles y pásalas ambas. Tras programar, " +
+      "vuelve a pintar el HTML del gantt general.",
     inputSchema: {
-      project_id: z.string(),
-      tarea_id: z.string(),
-      objetivo: z.record(z.any()),
+      id: z.number().int(),
+      fecha_inicio: z.string().describe("YYYY-MM-DD"),
+      fecha_fin: z.string().optional().describe("YYYY-MM-DD; por defecto = fecha_inicio"),
     },
   },
-  async ({ project_id, tarea_id, objetivo }) =>
-    json(await repo.guardarObjetivo(project_id, tarea_id, objetivo as Record<string, unknown>)),
-);
-
-// Elimina UN objetivo por id.
-server.registerTool(
-  "pm_gantt_objetivo_eliminar",
-  {
-    title: "Eliminar objetivo",
-    description:
-      "Elimina UN objetivo de un proyecto por su objetivo_id. Devuelve cuántos se borraron. " +
-      "Tras eliminar, vuelve a pintar el HTML del dashboard.",
-    inputSchema: { project_id: z.string(), objetivo_id: z.string() },
-  },
-  async ({ project_id, objetivo_id }) => json(await repo.eliminarObjetivo(project_id, objetivo_id)),
+  async ({ id, fecha_inicio, fecha_fin }) =>
+    json(await repo.programarPlan(id, fecha_inicio, fecha_fin)),
 );
 
 const transport = new StdioServerTransport();
