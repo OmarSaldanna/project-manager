@@ -25,9 +25,11 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
 2. Crea `manager/` y copia desde el plugin (NO se edita su contenido):
    - `mkdir -p manager`
    - `cp -R "${CLAUDE_PLUGIN_ROOT}/gantt" manager/gantt`
-     (queda `manager/gantt/index.html` con los datos embebidos en `<script id="project-data">`,
-     reflejo de la DB; ya no hay `gantt.js`). El Gantt vive en la DB (`pm_gantt*`); `/pm-gantt`
-     lo gestiona y repinta el HTML.
+     (queda `manager/gantt/general.html`, el dashboard **activo** del **gantt general**, con los
+     datos embebidos en `<script id="general-data">window.GENERAL_DATA = {…}</script>`, reflejo
+     de la tabla global `pm_plan_desarrollo`; `manager/gantt/index.html` se copia también pero
+     queda **congelado** como base del futuro gantt **particular**, fuera de alcance por ahora).
+     `/pm-gantt` lee/programa la DB y repinta `general.html`.
    - `mkdir -p manager/traces && cp "${CLAUDE_PLUGIN_ROOT}/trace/trace.html" manager/traces/trace.html`
      (deja lista la **plantilla de bitácoras de traza**; `/reporte-cambios` generará al lado copias
      `trace_*.html` con los datos de cada reporte).
