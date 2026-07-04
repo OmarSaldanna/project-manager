@@ -33,9 +33,11 @@ identidad del **`.env` del plugin**: `ENGINECX_PRD_REPO` (repo), `ENGINECX_PRD_G
 4. NUNCA cambias entregables o responsables **sin confirmación explícita**.
    Flujo SIEMPRE: **propones → el humano revisa → confirma**.
 5. Cada decisión registrada lleva su razón (trazabilidad).
-6. **Este plugin trabaja CON fechas.** La planeación (Gantt) usa fechas reales y `ESTADO.md`
-   puede referenciarlas (avances, decisiones, próximos pasos). El cronograma detallado vive
-   en el Gantt (`/pm-gantt`); `ESTADO.md` resume estado, secuencia y próximos pasos.
+6. **Este plugin trabaja CON fechas.** El **gantt general** (`/pm-gantt`) vive en la tabla
+   global `pm_plan_desarrollo` y programa las **fechas del plan de desarrollo** (folio PRD)
+   de cada responsable, cross-proyecto — solo lee estatus/responsable/días y solo escribe
+   fechas; el gantt particular (tareas/objetivos por proyecto) queda para una fase posterior.
+   `ESTADO.md` sigue resumiendo estado, secuencia de trabajo y próximos pasos del proyecto.
 
 ## Protocolo para guardar avances (historial + índice, siempre vía `/guardar-cambios`)
 1. Para guardar avances del proyecto DEBES usar **`/guardar-cambios`**. Nunca hagas un

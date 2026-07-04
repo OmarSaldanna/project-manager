@@ -38,7 +38,9 @@ Contexto que aporta el project manager (puede venir vacío): **$ARGUMENTS**
      re-inicialice obtiene el mismo id).
 3. Usa siempre `project_id` (+ `unidad`) de este archivo en `pm_indexar` (`nombre` opcional =
    `project_id`); `repo_url` se obtiene de `git remote get-url origin` (opcional — ya no vive
-   en `config.json`).
+   en `config.json`). Si el archivo trae `prd_id` (lo agrega `resolve-id` de `/pm-init`),
+   pásalo también a `pm_indexar` para que `pm_projects.prd_id` quede poblado y el gantt
+   general (`/pm-gantt`) pueda ligar este proyecto a su plan de desarrollo por folio.
 
 ## Paso 1 — Reporte de cambios y acuerdo de archivos
 
@@ -79,6 +81,7 @@ Contexto que aporta el project manager (puede venir vacío): **$ARGUMENTS**
 Para **cada commit** realizado, llama a `pm_indexar` con:
 - `project_id`, `unidad` → de `manager/config.json` (`nombre` opcional = `project_id`);
   `repo_url` → de `git remote get-url origin` (si hay; opcional).
+- `prd_id` → de `manager/config.json` **si existe** (Paso 0).
 - `repo_root` → la raíz absoluta del repo (Paso 1).
 - `commit_sha` → el sha de ESE commit; `created_at` → su fecha ISO.
 - `files` → los archivos de ESE commit (ruta relativa). Marca `deleted: true` para los

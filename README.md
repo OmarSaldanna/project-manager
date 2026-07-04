@@ -9,7 +9,9 @@ agente navega y mantiene el proyecto **sin leer repositorios completos**.
 - **Índice navegable** del código y la documentación (símbolos, chunks de markdown, etc.) en
   una base de datos externa, con **versionado por entidad** (changelog y diffs).
 - **PRD** del proyecto (`manager/PRD.md`) construido siguiendo la entrevista estándar de Engine.
-- **Planeación con fechas** (diagrama de Gantt) derivada del PRD con apoyo de *superpowers*.
+- **Gantt general** de planes de desarrollo (`pm_plan_desarrollo`, cross-proyecto y por
+  responsable): consulta estados y programa fechas por PRD. El gantt particular por proyecto
+  queda para una fase posterior.
 - **Commits consistentes**: git + índice siempre sincronizados.
 - **Bitácoras de trazabilidad** en HTML.
 
@@ -19,7 +21,7 @@ agente navega y mantiene el proyecto **sin leer repositorios completos**.
 |---|---|
 | `/pm-init` | Inicializa PM·AI en un repo e indexa el baseline. |
 | `/pm-prd` | Construye/mantiene el PRD (`manager/PRD.md`). |
-| `/pm-gantt` | Planeación con fechas (Gantt, sprints, objetivos). |
+| `/pm-gantt` | Gantt general de planes de desarrollo (consulta estados; programa fechas). |
 | `/guardar-cambios` | Guarda tu avance: registro en el historial (git) + actualización de la memoria del proyecto (índice). |
 | `/reporte-cambios` | Reporte HTML del histórico de cambios (por defecto `manager/PRD.md`; también entidad/archivo/commit). |
 

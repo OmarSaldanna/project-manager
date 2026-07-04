@@ -186,6 +186,9 @@ SOLO tras el **sí explícito** del Paso 4.5, indexa el proyecto completo:
 2. Llama a `pm_indexar` con:
    - `project_id`, `unidad` → de `manager/config.json` (`nombre` opcional = `project_id`);
      `repo_url` → de `git remote get-url origin` (si hay; opcional — ya no vive en `config.json`).
+   - `prd_id` → de `manager/config.json` **si existe** (lo agrega `resolve-id` en el Paso 3).
+     Así `pm_projects.prd_id` queda poblado y el gantt general (`/pm-gantt`) puede ligar este
+     proyecto a su plan de desarrollo por folio (`PJ{prd_id}`).
    - `repo_root` → la raíz absoluta del repo.
    - `commit_sha` y `created_at` → del paso anterior.
    - `files` → la lista indexable acordada (todas como altas; sin `deleted`).

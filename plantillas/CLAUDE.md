@@ -14,11 +14,13 @@ repositorio completos** — navegas el índice (tools `pm_*`) y lees solo lo nec
   transcripts nuevos; si no, pregunta si partir de un PRD existente o crear uno nuevo. Define
   **qué** se construye y **por qué**. Procesa los transcripts en `manager/transcripts/`
   (originales) y `manager/transcripts-resumidos/` (condensados).
-- **`/pm-gantt`** — gestiona la planeación, que **vive en la DB** (`pm_gantt*`): tareas
-  (cronograma **por días hábiles**) y **objetivos que desglosan cada tarea** (el % de la tarea se
-  deriva de ellos). El dashboard `manager/gantt/index.html` **embebe una copia** de la DB.
-  Construye el Gantt a partir del PRD usando la skill de planeación de superpowers; sirve para planear,
-  ajustar y registrar avances, y para visualizar el tablero (`manager/gantt/index.html`).
+- **`/pm-gantt`** — gestiona el **gantt general** de planes de desarrollo: la vista
+  **cross-proyecto y cross-desarrollador** que vive en la tabla global `pm_plan_desarrollo`
+  (folio, estatus, responsable y días estimados los alimentan los desarrolladores por SQL
+  directo). El comando **solo lee** los planes y **solo programa fechas** (en días hábiles),
+  ligando cada plan a este proyecto por `folio_prd` → `prd_id`. El dashboard
+  `manager/gantt/general.html` **embebe una copia** de la DB. El gantt **particular** (tareas
+  y objetivos de este proyecto) queda **fuera de alcance por ahora**.
 - **`/guardar-cambios`** — guarda tu avance: lo deja registrado en el **historial (commit[s]
   en git)** y actualiza la **memoria del proyecto** (`pm_index`) aplicando el criterio de
   Entidades de Código. Es el flujo de trabajo habitual cada vez que hay avances.
@@ -40,7 +42,7 @@ manager/
 ├─ PRD.md                   # EL PRD del proyecto (único). Sigue la plantilla de Engine.
 ├─ transcripts/             # transcripts/documentos originales
 ├─ transcripts-resumidos/   # condensados de cada transcript (insumo del PRD)
-├─ gantt/                   # dashboard del Gantt (index.html con datos embebidos = reflejo de la DB)
+├─ gantt/                   # dashboard del gantt general (general.html con datos embebidos = reflejo de la DB)
 ├─ traces/                  # plantilla + bitácoras de traza generadas por /reporte-cambios
 └─ config.json              # identidad del proyecto (project_id, unidad, sistema, prd_id, prd_dir)
 ```
@@ -106,18 +108,25 @@ identidad del **`.env` del plugin**: `ENGINECX_PRD_REPO` (repo), `ENGINECX_PRD_G
 - El `cambio`/diff se puebla **de aquí en adelante**: lo indexado antes de esta capacidad
   aparece como "diff no disponible".
 
-## Tablero de planeación (DB `pm_gantt*` → `manager/gantt/index.html`)
+## Gantt general de planes de desarrollo (DB `pm_plan_desarrollo` → `manager/gantt/general.html`)
 
-El Gantt **vive en la base de datos**: `pm_gantt` (cabecera), `pm_gantt_tarea` (tareas, por
-**fechas** `start`/`end` en días hábiles) y `pm_gantt_objetivo` (objetivos que **desglosan**
-cada tarea, con `planned`/`finished`). El **% de avance de la tarea se DERIVA** de sus objetivos
-terminados (vista `pm_gantt_tarea_avance`); `pm_gantt_resumen` da insights (hechos, atrasados,
-avance global). Todo cuelga del mismo `project_id` que el índice de código.
+El **gantt general** es la vista **cross-proyecto y cross-desarrollador** que vive en la tabla
+global `pm_plan_desarrollo`: una fila por plan (`folio_prd` tipo `PJ6215`, `estatus`,
+`responsable`, `dias` estimados, y `fecha_inicio`/`fecha_fin` una vez programadas). Los
+**desarrolladores** alimentan folio/estatus/responsable/días por SQL directo; PM·AI **solo
+lee** y **solo programa fechas** (en días hábiles L–V) con `/pm-gantt`. Cada plan se liga a su
+proyecto (y de ahí al índice de código) por `folio_prd` → `pm_projects.prd_id` → `project_id`
+— el enlace lo puebla el `prd_id` de `manager/config.json`, que `/pm-init` y
+`/guardar-cambios` propagan al llamar a `pm_indexar`.
 
-El dashboard `manager/gantt/index.html` **embebe una copia** de esos datos en
-`<script id="project-data">window.PROJECT_DATA = {…}</script>` (reflejo de la DB; fines de
-semana rayados, línea vertical en el **día de hoy**, objetivos agrupados por tarea). Gestiónalo
-con `/pm-gantt`, que actualiza la DB y **repinta** el HTML.
+El dashboard `manager/gantt/general.html` **embebe una copia** de esos datos en
+`<script id="general-data">window.GENERAL_DATA = {…}</script>` (reflejo de la DB; planes
+agrupados por responsable, barras por PRD sobre el calendario, línea vertical en el **día de
+hoy**, y una lista de pendientes = aprobados sin fecha). Gestiónalo con `/pm-gantt`, que lee/
+programa la DB y **repinta** el HTML.
+
+El **gantt particular** (tareas y objetivos puntuales de cada proyecto, con % de avance
+derivado) está **retirado temporalmente**; se rediseñará en una fase posterior.
 
 ## Protocolo de trabajo
 
@@ -125,7 +134,9 @@ Flujo SIEMPRE **propuesta → revisión → confirmación**. NUNCA cambies entre
 responsables, fechas comprometidas ni el alcance comprometido sin confirmación explícita.
 Cada decisión registrada lleva su razón (trazabilidad).
 
-**Con fechas (días hábiles):** la planeación (Gantt) usa **fechas reales** (`start`/`end` por
-tarea, estimadas en días hábiles L–V) y `ESTADO.md` puede referenciarlas. El cronograma vive en
-el Gantt; el PRD define el QUÉ/POR QUÉ. El Gantt se deriva del PRD usando la skill
-`writing-plans` de superpowers (y `brainstorming` para esclarecer alcance).
+**Con fechas (días hábiles):** el **gantt general** (`/pm-gantt`) programa **fechas reales**
+(`fecha_inicio`/`fecha_fin` del plan de desarrollo, en días hábiles L–V) sobre lo que ya
+aprobaron los desarrolladores; el PRD sigue definiendo el QUÉ/POR QUÉ. El gantt **particular**
+por proyecto (derivado del PRD con las skills `writing-plans`/`brainstorming` de superpowers)
+queda fuera de alcance por ahora; `ESTADO.md` puede referenciar las fechas del general
+mientras tanto.
