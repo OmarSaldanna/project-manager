@@ -48,7 +48,7 @@ Contexto/transcript/recurso que aporta el desarrollador (puede venir vacío): **
 manager/
 ├─ PRD.md                   # EL PRD del proyecto (único, versionado y accesible)
 ├─ config.json              # identidad del proyecto (FUENTE ÚNICA — ver abajo)
-├─ transcripts/             # transcripts/documentos ORIGINALES (intactos, .md/.txt)
+├─ transcripts/             # transcripts/documentos ORIGINALES (intactos, .md/.txt/.pdf)
 └─ transcripts-resumidos/   # CONDENSADOS: solo lo relevante extraído de cada original
 ```
 
@@ -70,7 +70,7 @@ espejo de `manager/`). Lo gestiona el bin `prd-sync` (ver "Publicación al repo 
 El desarrollador aporta transcripts de dos maneras; soporta ambas:
 
 1. **En su prompt** (`$ARGUMENTS` trae el texto o una ruta) → guarda el original como
-   `manager/transcripts/<nombre>.md`.
+   `manager/transcripts/<nombre>.<ext>`, conservando su extensión real (`.md`, `.txt`, `.pdf`…).
 2. **Dejándolos** en `manager/transcripts/`.
 
 **Detección de transcript NUEVO (paso accionable):** lista `manager/transcripts/` y
@@ -101,8 +101,10 @@ queda intacto. Usa esta **plantilla fija** (omite un encabezado solo si no hay n
 - …
 ```
 
-**Formatos admitidos:** texto plano (`.txt`, `.md`) y archivos de código. **NO admitidos:**
-Word/PDF/binarios — comunícalo y pide una versión en texto/markdown; no lo conviertas.
+**Formatos admitidos:** texto plano (`.txt`, `.md`), archivos de código y **PDF** (Claude los
+lee de forma nativa con la tool `Read`; conserva el `.pdf` original y produce el condensado en
+`.md`). **NO admitidos:** Word (`.doc`/`.docx`) y otros binarios — comunícalo y pide una versión
+en texto/markdown/PDF; no los conviertas.
 
 ## Empresa / unidad de negocio (de `config.json`, selección cerrada)
 
