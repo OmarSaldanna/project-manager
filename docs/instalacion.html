@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PM·AI — Plan de divulgación e instalación</title>
+<style>
+  :root{
+    --ink:#1c1c1e; --sub:#5b5b5f; --line:#e5e5e7;
+    --bg:#fafafa; --card:#ffffff; --accent:#8a3ffc; --warn:#b3480a; --warnbg:#fff4ec;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    line-height:1.55;
+  }
+  main{max-width:760px; margin:0 auto; padding:48px 24px 96px}
+  h1{font-size:1.7rem; margin:0 0 6px}
+  .lead{color:var(--sub); margin:0 0 40px; font-size:.98rem}
+  h2{font-size:1.05rem; margin:0 0 4px; display:flex; align-items:baseline; gap:10px}
+  h2 .n{color:var(--accent); font-variant-numeric:tabular-nums}
+  section{margin-bottom:44px}
+  section > p.hint{color:var(--sub); font-size:.9rem; margin:0 0 18px}
+  ol,ul{padding-left:1.2em; margin:0}
+  li{margin-bottom:10px}
+  li:last-child{margin-bottom:0}
+  code{
+    background:#f0f0f2; border-radius:4px; padding:1px 6px;
+    font-size:.85em; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  pre{
+    background:#1c1c1e; color:#f4f4f5; padding:12px 14px; border-radius:8px;
+    overflow-x:auto; font-size:.82rem; margin:10px 0;
+  }
+  pre code{background:none; padding:0; color:inherit}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:12px;
+    padding:22px 24px;
+  }
+  .checklist{list-style:none; padding-left:0}
+  .checklist li{position:relative; padding-left:26px}
+  .checklist li::before{
+    content:""; position:absolute; left:0; top:4px; width:14px; height:14px;
+    border:1.5px solid var(--sub); border-radius:4px;
+  }
+  .warn{
+    background:var(--warnbg); border:1px solid #f0c9a8; border-left:3px solid var(--warn);
+    border-radius:8px; padding:14px 16px; font-size:.9rem; margin-top:16px;
+  }
+  .warn b{color:var(--warn)}
+  .steps{counter-reset:step}
+  .steps > li{list-style:none; position:relative; padding-left:34px; margin-bottom:18px}
+  .steps > li::before{
+    counter-increment:step; content:counter(step);
+    position:absolute; left:0; top:0; width:22px; height:22px; border-radius:50%;
+    background:var(--accent); color:#fff; font-size:.75rem; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+  }
+  footer{color:var(--sub); font-size:.82rem; margin-top:56px; border-top:1px solid var(--line); padding-top:18px}
+</style>
+</head>
+<body>
+<main>
+
+  <h1>PM·AI — Plan de divulgación</h1>
+  <p class="lead">Cómo llevar el plugin de Project Manager con IA a las computadoras del resto del equipo. Tres pasos, en orden: preparar la máquina, instalar el plugin desde Claude Desktop y cargar las credenciales.</p>
+
+  <section>
+    <h2><span class="n">1</span> Software base por máquina</h2>
+    <p class="hint">Requisito previo en cada computadora, antes de instalar el plugin.</p>
+    <div class="card">
+      <ul class="checklist">
+        <li><b>Claude Desktop</b> instalado y con sesión iniciada.</li>
+        <li><b>Node.js ≥ 22</b> y <b>pnpm ≥ 11</b>. Forma más simple: <code>corepack enable</code> (ya trae la versión fijada en el repo).</li>
+        <li>Salida de red a <b>Supabase</b> y al endpoint de <b>embeddings/LLM</b> — si hay proxy o firewall corporativo, pedir a TI que lo confirme antes.</li>
+      </ul>
+      <div class="warn">
+        El repositorio <b>no distribuye binarios compilados</b> (<code>dist/</code> está en <code>.gitignore</code>). Después de instalar el plugin hace falta un build local — ver paso 6 de la sección 2.
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">2</span> Compartir el repo e instalar desde Claude Desktop</h2>
+    <p class="hint">El marketplace del plugin hoy apunta a una ruta local (<code>"source": "."</code>); para instalarlo en otra máquina primero necesita vivir en una URL de git accesible al equipo.</p>
+    <div class="card">
+      <ol class="steps">
+        <li>Publicar este repositorio (privado) en el proveedor de git de la empresa, si aún no está ahí.</li>
+        <li>Compartir la URL del repo con cada compañero — es solo una URL, no un secreto; puede ir por el canal normal del equipo (Slack, correo, etc.).</li>
+        <li>En Claude Desktop, cada persona ejecuta:
+          <pre><code>/plugin marketplace add &lt;url-del-repo&gt;</code></pre>
+        </li>
+        <li>Instalar el plugin desde ese marketplace:
+          <pre><code>/plugin install pm-ai@engine-cx-local</code></pre>
+        </li>
+        <li>Claude Desktop va a pedir los valores de configuración del plugin (<code>supabase_service_key</code>, <code>embeddings_key</code>, <code>llm_key</code>) — se guardan cifrados en el llavero del sistema, nunca en el repo. Ver sección 3 para de dónde salen esos valores.</li>
+        <li>Compilar una vez, dentro de la carpeta donde Claude Desktop dejó el plugin instalado:
+          <pre><code>pnpm install && pnpm build</code></pre>
+          Este paso genera <code>packages/mcp/dist/index.js</code> y los demás binarios que el plugin necesita para arrancar.
+        </li>
+        <li>Reiniciar Claude Desktop (o recargar plugins) para que tome el servidor MCP nuevo.</li>
+        <li>Verificar pidiéndole a Claude: <i>"lista mis proyectos"</i>. Si responde usando <code>pm_proyectos</code>, la instalación quedó bien.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">3</span> Archivo de credenciales</h2>
+    <p class="hint">Cada Project Manager necesita las mismas credenciales para que el plugin funcione: la conexión a la base de datos compartida y, si va a usar <code>/pm-prd</code>, el acceso al repo central de PRDs.</p>
+    <div class="card">
+      <p style="margin-top:0"><b>Qué contiene el paquete de credenciales</b> (no son secretos personales, son del equipo):</p>
+      <ul>
+        <li><code>supabase_service_key</code> — acceso de servicio a la base compartida.</li>
+        <li><code>embeddings_key</code> — obligatoria, para generar los embeddings del índice.</li>
+        <li><code>llm_key</code> — opcional; sin ella, las descripciones de código usan un fallback sin LLM.</li>
+        <li><code>.env</code> de <code>enginecx_prd</code> — <code>ENGINECX_PRD_REPO</code>, <code>ENGINECX_PRD_GIT_USER</code>, <code>ENGINECX_PRD_GIT_TOKEN</code>, <code>ENGINECX_PRD_GIT_EMAIL</code> (solo si la persona va a usar <code>/pm-prd</code>).</li>
+      </ul>
+
+      <p><b>Flujo por Project Manager:</b></p>
+      <ol class="steps">
+        <li>Recibe el paquete de credenciales desde el canal seguro designado (gestor de contraseñas del equipo — no texto plano por chat o correo).</li>
+        <li>Le pasa el archivo/valores a Claude Desktop y le pide: <i>"configura mis credenciales de PM·AI con esto"</i>.</li>
+        <li>Claude completa el <code>userConfig</code> del plugin si falta algún valor, y coloca el <code>.env</code> en la raíz del repo local (nunca dentro de <code>manager/</code>, nunca lo commitea — ya está en <code>.gitignore</code>).</li>
+        <li>Le pide a Claude que <b>pruebe</b> la configuración: correr <code>/pm-init</code> sobre un repo de prueba, o simplemente pedirle que liste los proyectos existentes.</li>
+      </ol>
+
+      <div class="warn">
+        <b>Antes de repartir esto a todo el equipo:</b> la <code>supabase_service_key</code> da acceso total a la base de <u>todos</u> los proyectos indexados (no solo los propios), y el token de <code>enginecx_prd</code> puede escribir en el repo central de PRDs. Son credenciales de equipo, no de una persona — definan quién puede rotarlas, cuándo, y qué pasa si alguien deja la empresa.
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="n">✓</span> Al terminar</h2>
+    <div class="card">
+      <p style="margin:0">Cada Project Manager queda con el plugin instalado y probado, listo para correr <code>/pm-init</code> la primera vez que arranque con uno de sus proyectos.</p>
+    </div>
+  </section>
+
+  <footer>PM·AI · Engine CX — documento interno de instalación.</footer>
+
+</main>
+</body>
+</html>
