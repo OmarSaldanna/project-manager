@@ -8,7 +8,7 @@
     {
       "name": "pm-ai",
       "description": "Project Manager con IA: RAG de documentación + índice simbólico de código, memoria de estado por proyecto. Engine CX.",
-      "version": "6.2.0",
+      "version": "6.2.1",
       "source": "."
     }
   ]

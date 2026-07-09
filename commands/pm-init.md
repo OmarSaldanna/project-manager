@@ -23,6 +23,41 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
   pregunta del selector va **corta**; cualquier tabla o detalle va en un mensaje normal
   **antes** del selector (dentro del selector el markdown sale en crudo).
 
+## Paso 0 — Verificación del entorno (`.env`) — BLOQUEANTE
+
+Antes de tocar nada, verifica que exista el `.env` en la **raíz del plugin**
+(`${CLAUDE_PLUGIN_ROOT}/.env`) y que tenga **todas** las credenciales que este comando
+necesita (indexa y publica al repo central). Si falta el archivo o alguna clave, **DETENTE**:
+guía al usuario para copiar `.env.example` a `.env` en la raíz del plugin y completarlo, y
+**no continúes** con el resto de los pasos.
+
+Credenciales requeridas:
+- **Índice / MCP** (Supabase + embeddings): `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`,
+  `PM_EMBEDDINGS_KEY`.
+- **Repo central de PRDs** (`prd-sync`): `ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`,
+  `ENGINECX_PRD_GIT_EMAIL`, `ENGINECX_PRD_GIT_TOKEN`.
+
+Corre este chequeo (reporta ✓/✗ por clave y **NUNCA imprime los valores**, solo el nombre):
+
+```bash
+ENV="${CLAUDE_PLUGIN_ROOT}/.env"
+[ -f "$ENV" ] || { echo "✗ No existe $ENV — copia .env.example a la raíz del plugin y complétalo"; exit 1; }
+miss=0
+for k in SUPABASE_URL SUPABASE_SERVICE_KEY PM_EMBEDDINGS_KEY \
+         ENGINECX_PRD_REPO ENGINECX_PRD_GIT_USER ENGINECX_PRD_GIT_EMAIL ENGINECX_PRD_GIT_TOKEN; do
+  v=$(grep -E "^${k}=" "$ENV" | head -1 | cut -d= -f2- | sed 's/[[:space:]]*#.*$//; s/^[[:space:]]*//; s/[[:space:]]*$//')
+  case "$v" in
+    ""|*...|"https://TU-PROYECTO.supabase.co"|"tu-usuario"|"tu-correo@enginecx.com"|*"/ORG/"*)
+      echo "✗ $k — falta o sigue con valor de ejemplo"; miss=1 ;;
+    *) echo "✓ $k" ;;
+  esac
+done
+[ "$miss" -eq 0 ] && echo "OK: .env completo" || { echo "INCOMPLETO — completa las claves ✗ antes de seguir"; exit 1; }
+```
+
+Si el chequeo falla, repórtale al usuario **qué claves** faltan (por nombre), pídele que edite
+el `.env` de la raíz del plugin y **no avances** hasta que pase. El chequeo no revela secretos.
+
 ## Paso 1 — Andamiaje desde el código fuente del plugin
 
 1. Determina la raíz del repo: `git rev-parse --show-toplevel`.
