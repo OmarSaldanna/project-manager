@@ -57,34 +57,31 @@ manualmente en cada shell.
 
 ### 3.3 Manejo de secretos del MCP (el punto crítico)
 
-- **Síntoma/Riesgo:** en `plugin.json` las variables `${SUPABASE_URL}`, `${SUPABASE_SERVICE_KEY}`,
-  etc. se resuelven desde el **entorno del shell** que lanzó `claude`, **no** desde el `.env`
-  del proyecto (Claude Code no carga `.env` automáticamente). Si faltan → cadena vacía →
-  el MCP arranca con credenciales vacías y falla.
-- **Solución elegida:** **`userConfig`** en `plugin.json`. Cada secreto se declara con
-  `"sensitive": true` (se guarda en el **llavero del sistema**, nunca en git ni en
-  `settings.json`) y se interpola en el `env` del MCP como **`${user_config.<clave>}`**.
-  Se resuelve **antes** de arrancar el subproceso del MCP.
-- **Clasificación de variables** (tras leer `packages/core/src/env.ts` y `packages/mcp/src/index.ts`):
+> **Actualización (v6.1.0):** se eliminó `userConfig`. Instalar el plugin ya **no pide
+> credenciales**. El MCP toma toda su config de un `.env` en la raíz del plugin que **el propio
+> proceso Node carga** con `process.loadEnvFile` — no Claude Code. Lo de abajo (userConfig +
+> `--config`) queda como registro histórico del diseño original.
 
-  | Variable | Tipo | Trato |
-  |---|---|---|
-  | `SUPABASE_URL` | endpoint | fija en `.mcp.json` |
-  | `SUPABASE_SERVICE_KEY` | **secreto** | `userConfig` (llavero) |
-  | `PM_EMBEDDINGS_URL` / `_MODEL` / `_DIM` | config | fijas en `.mcp.json` |
-  | `PM_EMBEDDINGS_KEY` | **secreto** | `userConfig` (llavero) |
-  | `PM_LLM_URL` / `_MODEL` | config | fijas en `.mcp.json` |
-  | `PM_LLM_KEY` | **secreto opcional** | `userConfig` (llavero) |
-
-- **Carga de secretos sin teclearlos en claro:** `claude plugin install --config key=value`
-  (repetible) leyendo los valores desde el `.env` vía variables de shell:
-  ```bash
-  set -a; . ./.env; set +a
-  claude plugin install pm-ai@engine-cx-local \
-    --config supabase_service_key="$SUPABASE_SERVICE_KEY" \
-    --config embeddings_key="$PM_EMBEDDINGS_KEY" \
-    --config llm_key="$PM_LLM_KEY"
-  ```
+- **Síntoma/Riesgo original:** en `plugin.json` las variables `${SUPABASE_URL}`,
+  `${SUPABASE_SERVICE_KEY}`, etc. se resuelven desde el **entorno del shell** que lanzó
+  `claude`, **no** desde el `.env` del proyecto (Claude Code no carga `.env` automáticamente).
+  Si faltan → cadena vacía → el MCP arranca con credenciales vacías y falla.
+- **Solución actual (v6.1.0): el MCP carga el `.env` él mismo.** `loadConfig()` en
+  `packages/core/src/env.ts` llama `process.loadEnvFile(join(pluginRoot(), ".env"))` antes de
+  leer `process.env` (mismo patrón que `packages/prd-sync/src/env.ts`, que ya cargaba las
+  `ENGINECX_PRD_*` de ese mismo `.env`). Como es **Node** quien lee el archivo, el problema de
+  que Claude Code no cargue `.env` desaparece. `.mcp.json` queda minimal (solo `command` +
+  `args`); el `.env` de la raíz del plugin es la **fuente única** de toda la config del MCP.
+  `process.loadEnvFile` no pisa variables ya presentes en `process.env`.
+- **Solución original (deprecada):** **`userConfig`** en `plugin.json`. Cada secreto se
+  declaraba con `"sensitive": true` (llavero del sistema) y se interpolaba en el `env` del MCP
+  como **`${user_config.<clave>}`**.
+- **Clasificación de variables (v6.1.0):** todas viven en el `.env` de la raíz del plugin.
+  `SUPABASE_URL` / `PM_EMBEDDINGS_KEY` / `SUPABASE_SERVICE_KEY` son requeridas; los endpoints,
+  modelos, `PM_EMBEDDINGS_DIM` y el bloque `PM_LLM_*` tienen defaults en `loadConfig`
+  (embeddings/LLM) o son opcionales. Ver `.env.example`.
+- **Colocación del `.env`:** tras instalar, copiar `.env.example` a `.env` en la raíz del
+  plugin (la copia cacheada: `~/.claude/plugins/cache/engine-cx-local/pm-ai/<ver>/.env`).
 
 ### 3.4 LLM opcional (robustez del indexado)
 
@@ -124,9 +121,9 @@ manualmente en cada shell.
 - **Causa:** Claude Code **no carga** el `mcpServers` embebido en `plugin.json`. El patrón
   soportado (confirmado contra el plugin oficial de Vercel) es un archivo **`.mcp.json`** en
   la raíz del plugin.
-- **Solución:** se movió el bloque a **`.mcp.json`** (con `${CLAUDE_PLUGIN_ROOT}` y
-  `${user_config.*}`) y se eliminó `mcpServers` de `plugin.json` (el `userConfig` se quedó
-  ahí). Tras reinstalar: **`MCP servers (1) pm-ai`**.
+- **Solución:** se movió el bloque a **`.mcp.json`** y se eliminó `mcpServers` de
+  `plugin.json`. Tras reinstalar: **`MCP servers (1) pm-ai`**. (En v6.1.0 `.mcp.json` quedó
+  minimal —solo `command`+`args`— y `plugin.json` quedó sin `userConfig`; ver §3.3.)
 
 ### 3.8 Recarga de cambios en desarrollo
 
@@ -157,42 +154,30 @@ manualmente en cada shell.
 
 ## 5. Configuración resultante
 
-**`.claude-plugin/plugin.json`** (sin `mcpServers`; con `userConfig`):
+**`.claude-plugin/plugin.json`** (sin `mcpServers`; sin `userConfig` desde v6.1.0):
 ```jsonc
 {
   "name": "pm-ai",
-  "version": "0.1.0",
-  "author": { "name": "Engine CX" },
-  "userConfig": {
-    "supabase_service_key": { "type": "string", "sensitive": true, "required": true,  "title": "Supabase Service Key", "description": "…" },
-    "embeddings_key":       { "type": "string", "sensitive": true, "required": true,  "title": "Embeddings API Key",   "description": "…" },
-    "llm_key":              { "type": "string", "sensitive": true, "required": false, "title": "LLM API Key (opcional)","description": "…" }
-  }
+  "version": "6.1.0",
+  "author": { "name": "Omar Lara by Engine CX" }
 }
 ```
 
-**`.mcp.json`** (raíz del plugin):
+**`.mcp.json`** (raíz del plugin) — minimal; la config viaja por el `.env` que el MCP autocarga:
 ```jsonc
 {
   "mcpServers": {
     "pm-ai": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/mcp/dist/index.js"],
-      "env": {
-        "SUPABASE_URL": "https://<proyecto>.supabase.co",
-        "SUPABASE_SERVICE_KEY": "${user_config.supabase_service_key}",
-        "PM_EMBEDDINGS_URL": "https://api.openai.com/v1/embeddings",
-        "PM_EMBEDDINGS_KEY": "${user_config.embeddings_key}",
-        "PM_EMBEDDINGS_MODEL": "text-embedding-3-small",
-        "PM_EMBEDDINGS_DIM": "1536",
-        "PM_LLM_URL": "https://api.openai.com/v1/chat/completions",
-        "PM_LLM_KEY": "${user_config.llm_key}",
-        "PM_LLM_MODEL": "gpt-4o-mini"
-      }
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/mcp/dist/index.js"]
     }
   }
 }
 ```
+
+**`.env`** (raíz del plugin, copia de `.env.example`) — fuente única de la config del MCP:
+`SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `PM_EMBEDDINGS_*` y (opcional) `PM_LLM_*`. No se sube a
+git; lo cargan el MCP y los CLIs con `process.loadEnvFile`.
 
 **`.claude-plugin/marketplace.json`** — marketplace local `engine-cx-local`, con
 `plugins[0].source = "."`.
@@ -211,28 +196,29 @@ pnpm install && pnpm -r build
 # (2) Registrar marketplace local (RUTA ABSOLUTA)
 claude plugin marketplace add <ruta-absoluta-del-repo>
 
-# (3) Instalar con secretos desde .env (sin teclearlos en claro)
-set -a; . ./.env; set +a
-claude plugin install pm-ai@engine-cx-local \
-  --config supabase_service_key="$SUPABASE_SERVICE_KEY" \
-  --config embeddings_key="$PM_EMBEDDINGS_KEY" \
-  --config llm_key="$PM_LLM_KEY"
+# (3) Instalar (NO pide credenciales)
+claude plugin install pm-ai@engine-cx-local
 
-# (4) Verificar
-claude plugin details pm-ai@engine-cx-local   # Skills (4) + MCP servers (1)
+# (4) Colocar el .env en la raíz del plugin (copia cacheada) y completarlo
+cp .env.example ~/.claude/plugins/cache/engine-cx-local/pm-ai/6.1.0/.env
+#   …editar ese .env con SUPABASE_URL, SUPABASE_SERVICE_KEY, PM_EMBEDDINGS_KEY, etc.
+
+# (5) Verificar
+claude plugin details pm-ai@engine-cx-local   # Skills + MCP servers (1)
 # En una sesión NUEVA:  /help  y  /mcp
 ```
 
-> Alternativa interactiva a (3): instalar sin `--config` y luego ejecutar
-> `/plugin configure pm-ai@engine-cx-local` dentro de Claude Code (captura enmascarada).
+> El MCP carga ese `.env` al arrancar (`process.loadEnvFile`). Desde una sesión de Claude Code
+> también puedes pedirle al agente que localice/coloque tu `.env` en la raíz del plugin.
 
 ---
 
 ## 7. Pendientes / notas de seguridad
 
-- **Higiene de secretos:** la instalación copió el `.env` (con claves) a la caché del
-  plugin (`~/.claude/plugins/cache/...`). No afecta el funcionamiento (el MCP recibe las
-  claves vía `userConfig`/llavero), pero conviene evitar que se copie en futuras versiones.
+- **Ubicación de secretos (v6.1.0):** el `.env` de la raíz del plugin (caché
+  `~/.claude/plugins/cache/...`) ES ahora el mecanismo — de ahí lee el MCP con
+  `process.loadEnvFile`. Está fuera de git (`.gitignore`); no lo subas. Ojo: una reinstalación
+  o bump de versión recrea el directorio cacheado, así que hay que volver a colocar el `.env`.
 - **Rotar** la `SUPABASE_SERVICE_KEY` al cerrar desarrollo (se compartió en claro durante el
   proceso).
 - **Namespacing de comandos:** según colisiones, los comandos pueden aparecer como

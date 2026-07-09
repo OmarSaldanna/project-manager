@@ -1,5 +1,8 @@
 /** Lectura tipada de configuración por entorno. Falla temprano y claro si falta algo. */
 
+import { fileURLToPath } from "node:url";
+import { dirname, resolve, join } from "node:path";
+
 export interface PmConfig {
   supabaseUrl: string;
   supabaseServiceKey: string;
@@ -20,7 +23,21 @@ function required(name: string): string {
   return v;
 }
 
+/** Raíz del plugin: CLAUDE_PLUGIN_ROOT si está, o tres niveles arriba de dist/. */
+export function pluginRoot(): string {
+  if (process.env.CLAUDE_PLUGIN_ROOT) return process.env.CLAUDE_PLUGIN_ROOT;
+  return resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+}
+
 export function loadConfig(): PmConfig {
+  // El MCP y el CLI del indexer toman sus credenciales del .env de la raíz del plugin
+  // (misma vía que prd-sync). Node lo carga, no Claude Code; no pisa variables ya presentes
+  // en process.env, así que un --env-file explícito o el entorno del shell siguen ganando.
+  try {
+    process.loadEnvFile(join(pluginRoot(), ".env"));
+  } catch {
+    // sin .env: se usa lo que haya en process.env
+  }
   return {
     supabaseUrl: required("SUPABASE_URL"),
     supabaseServiceKey: required("SUPABASE_SERVICE_KEY"),

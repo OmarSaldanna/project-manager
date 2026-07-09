@@ -33,6 +33,8 @@ agente, en [`CLAUDE.md`](CLAUDE.md).
 
 ## Configuración
 
-El servidor MCP necesita credenciales (Supabase + proveedor de embeddings/LLM). Copia
-`.env.example` a `.env` y complétalo; en Claude Code, los secretos se inyectan vía
-`userConfig` (ver `.mcp.json`). **Nunca** subas tu `.env`.
+Instalar el plugin **no pide credenciales**. El servidor MCP necesita credenciales (Supabase +
+proveedor de embeddings/LLM) que lee de un `.env` en la **raíz del plugin**: lo carga el propio
+proceso Node del MCP (`process.loadEnvFile`), no Claude Code. Tras instalar, copia
+`.env.example` a `.env` en la raíz del plugin y complétalo (ese mismo `.env` lleva también la
+identidad git de `enginecx_prd` que usa `prd-sync`). **Nunca** subas tu `.env`.

@@ -123,10 +123,13 @@ híbrida vector+léxico) está en `docs/entidades-y-indexacion.md` — léelo an
 `packages/indexer` o `packages/core`, no la dupliques de memoria.
 
 ### Configuración y secretos
-El servidor MCP (`.mcp.json`, raíz de este repo) toma Supabase + endpoint de
-embeddings/LLM (compatible OpenAI) de variables de entorno; las claves las declara
-`userConfig` en `.claude-plugin/plugin.json` (llavero del sistema al instalar el plugin), nunca
-hardcodeadas. Para desarrollo local contra una DB propia, copia `.env.example` a `.env`.
+El servidor MCP (`.mcp.json`, raíz de este repo) toma Supabase + endpoint de embeddings/LLM
+(compatible OpenAI) de un **`.env` en la raíz del plugin**, que el propio proceso Node del MCP
+carga con `process.loadEnvFile` (`loadConfig` en `packages/core/src/env.ts`) — igual que
+`prd-sync`. Instalar el plugin NO pide credenciales (no hay `userConfig`); tras instalar, se
+coloca el `.env` (copia de `.env.example`) en la raíz del plugin. `.mcp.json` solo arranca el
+MCP; toda la config vive en el `.env`, que es la fuente única (incluye también las
+`ENGINECX_PRD_*` de `prd-sync`).
 
 ### No confundir
 - `CLAUDE.md` (este archivo, raíz) — instrucciones vivas del agente, incluidas las de este

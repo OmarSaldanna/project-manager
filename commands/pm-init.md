@@ -16,6 +16,12 @@ Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
 - Flujo **propuesta → revisión → confirmación**: NO indexas en la base de datos hasta que
   el desarrollador confirme la lista de archivos.
 - No sobrescribas archivos existentes del proyecto sin avisar (ver Paso 1).
+- **Toda solicitud de autorización o confirmación se hace SIEMPRE con un selector**
+  (AskUserQuestion) de exactamente dos opciones — **«Autorizar»** y **«Chat about this»** —,
+  nunca pidiendo texto libre («sí»/«no»/«ajustar»). Solo con «Autorizar» continúas; con
+  «Chat about this» abres conversación para ajustar (o cancelar) y vuelves a proponer. La
+  pregunta del selector va **corta**; cualquier tabla o detalle va en un mensaje normal
+  **antes** del selector (dentro del selector el markdown sale en crudo).
 
 ## Paso 1 — Andamiaje desde el código fuente del plugin
 
@@ -101,9 +107,9 @@ Si `manager/config.json` ya existe con estos campos, **respétalos y NO re-pregu
       | Nombre del desarrollo (`project_id`) | `<project_id>` |
 
    2. **Luego** llama al **selector** (AskUserQuestion) con una pregunta **corta** (p. ej.
-      «¿Apruebas el init con estos datos?») y EXACTAMENTE estas dos opciones: **«Aprobar el
-      init»** y **«Chat about this»**. Solo con «Aprobar el init» continúas; con «Chat about
-      this» abres conversación para ajustar y vuelves a mostrar la tabla.
+      «¿Apruebas el init con estos datos?») y EXACTAMENTE estas dos opciones: **«Autorizar»**
+      y **«Chat about this»**. Solo con «Autorizar» continúas; con «Chat about this» abres
+      conversación para ajustar y vuelves a mostrar la tabla.
 
    **NO** escribas `config.json` ni indexes nada antes de la aprobación.
 
@@ -173,11 +179,15 @@ A diferencia de `/guardar-cambios`, aquí se lee TODO el proyecto, **excepto lo 
 4. Permite ajustar (excluir archivos/carpetas, o resolver los HTML pendientes) hasta llegar
    a un acuerdo sobre la lista.
 5. **Autorización explícita (OBLIGATORIA, bloqueante).** Con la lista y sus identidades de
-   código ya mostradas, pregunta de forma EXPLÍCITA si se procede:
-   > "¿Autorizas **leer e indexar** estos N archivos con las identidades de código
-   > mostradas? (sí / no / ajustar)"
-   - **NO leas ni indexes nada** (no llames a `pm_indexar`) hasta recibir un **sí explícito**.
-   - Si responde "ajustar", vuelve al punto 4. Si responde "no", detente sin indexar.
+   código ya mostradas **en un mensaje normal**, llama al **selector** (AskUserQuestion) con
+   una pregunta **corta** (p. ej. «¿Autorizas leer e indexar estos N archivos?») y EXACTAMENTE
+   estas dos opciones: **«Autorizar»** y **«Chat about this»**.
+   - **NO leas ni indexes nada** (no llames a `pm_indexar`) hasta que el selector devuelva
+     **«Autorizar»**.
+   - Con **«Chat about this»** abres conversación para ajustar la lista (vuelve al punto 4) o
+     cancelar; no indexas.
+   - Esto aplica **igual con 0 archivos indexables** (proyecto greenfield): usa el mismo
+     selector para autorizar el baseline vacío; no lo pidas por texto.
 
 ## Paso 5 — Primer commit en la base de datos
 
@@ -220,5 +230,9 @@ SOLO tras el **sí explícito** del Paso 4.5, indexa el proyecto completo:
 1. Espeja `manager/` y commitea en el repo central (lee `prd_dir` de `manager/config.json`):
    - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" mirror --manager "manager" --dir "<prd_dir>"`
    - `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" commit --dir "<prd_dir>" --message "feat(prd): <nombre> (<prd_dir>) — init"`
-2. **Propón** el push (no automático): muestra qué se subirá y, **solo tras confirmación**, corre
-   `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" push`.
+2. **Propón** el push (no automático): muestra qué se subirá **en un mensaje normal** y luego
+   llama al **selector** (AskUserQuestion) con una pregunta **corta** (p. ej. «¿Autorizas el
+   push al repo central?») y EXACTAMENTE estas dos opciones: **«Autorizar»** y **«Chat about
+   this»**. Solo con «Autorizar» corres
+   `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" push`; con «Chat about this» no
+   empujas nada.

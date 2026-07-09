@@ -2,18 +2,7 @@
   "mcpServers": {
     "pm-ai": {
       "command": "node",
-      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/mcp/dist/index.js"],
-      "env": {
-        "SUPABASE_URL": "https://fnlnjufexnwshvbjlqlk.supabase.co",
-        "SUPABASE_SERVICE_KEY": "${user_config.supabase_service_key}",
-        "PM_EMBEDDINGS_URL": "https://api.openai.com/v1/embeddings",
-        "PM_EMBEDDINGS_KEY": "${user_config.embeddings_key}",
-        "PM_EMBEDDINGS_MODEL": "text-embedding-3-small",
-        "PM_EMBEDDINGS_DIM": "1536",
-        "PM_LLM_URL": "https://api.openai.com/v1/chat/completions",
-        "PM_LLM_KEY": "${user_config.llm_key}",
-        "PM_LLM_MODEL": "gpt-4o-mini"
-      }
+      "args": ["${CLAUDE_PLUGIN_ROOT}/packages/mcp/dist/index.js"]
     }
   }
 }
