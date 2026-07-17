@@ -11,6 +11,17 @@ para el primer indexado. La mecánica de indexado está en `docs/entidades-y-ind
 
 Contexto del desarrollador (puede venir vacío): **$ARGUMENTS**
 
+> **Indexado a DB desactivado temporalmente.** Los **Pasos 4 y 5** (listado indexable + primer
+> commit en la base de datos) están **comentados** más abajo y **no se ejecutan** por ahora. El
+> resto del andamiaje (`manager/`, `.gitignore`, identidad en `config.json`) sí corre normal.
+> Reactivar el indexado en el futuro es solo quitar el comentario de esos dos pasos.
+
+> **Modo andamiaje (bootstrap desde `/pm-prd`).** Si te invocó `/pm-prd` solo para crear la
+> estructura del proyecto, ejecuta **únicamente los Pasos 0–3** (verificación de `.env`,
+> andamiaje, `.gitignore`, identidad en `config.json`) y **DETENTE ahí**: **no** corras el Paso 6
+> ni el Paso 7 (no hay PRD que publicar todavía). Devuelve el control a `/pm-prd`. Los Pasos 6 y 7
+> son solo para cuando el desarrollador corre `/pm-init` **directamente** (standalone).
+
 ## Reglas transversales (de CLAUDE.md — OBLIGATORIAS)
 
 - Flujo **propuesta → revisión → confirmación**: NO indexas en la base de datos hasta que
@@ -160,6 +171,12 @@ Si `manager/config.json` ya existe con estos campos, **respétalos y NO re-pregu
      `enginecx_prd/{sistema}/PJ{prd_id}-{project_id}/`, cuyo folder inferior es la liga/espejo de
      `manager/`.
 
+> **Pasos 4 y 5 — DESACTIVADOS (indexado a DB).** Están **comentados** en el bloque de abajo y
+> **no se ejecutan**. Tras el Paso 3, salta directo al **Paso 6**. Para reactivar el indexado,
+> quita las marcas `<!--` / `-->` que envuelven ambos pasos.
+
+<!-- INICIO PASOS DESACTIVADOS (indexado a DB) — no ejecutar
+
 ## Paso 4 — Listado completo de archivos a procesar
 
 A diferencia de `/guardar-cambios`, aquí se lee TODO el proyecto, **excepto lo que esté en
@@ -242,10 +259,13 @@ SOLO tras el **sí explícito** del Paso 4.5, indexa el proyecto completo:
 3. Para proyectos grandes, si la lista es muy extensa, puedes indexar en **lotes** (varias
    llamadas a `pm_indexar` con el mismo `commit_sha`) e ir reportando el progreso.
 
+FIN PASOS DESACTIVADOS (indexado a DB) -->
+
 ## Paso 6 — Reporte y handoff
 
-- Resume: qué se creó (`manager/`, `CLAUDE.md`, `.gitignore`) y los totales de
-  `pm_indexar` (altas / versiones / sin-cambio / tombstones).
+- Resume qué se creó: `manager/`, `CLAUDE.md`, `.gitignore` e identidad en `manager/config.json`
+  (`project_id`, `unidad`, `sistema`, `prd_id`, `prd_dir`). *(El indexado a DB está desactivado
+  por ahora; no hay totales de `pm_indexar` que reportar.)*
 - Sugiere los siguientes pasos: **`/pm-prd`** para el PRD, **`/pm-gantt`** para la
   planeación, **`/guardar-cambios`** para los avances posteriores y **`/reporte-cambios`** para
   generar bitácoras del histórico de cambios (del PRD o del código).

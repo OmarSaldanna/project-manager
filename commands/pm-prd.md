@@ -156,6 +156,21 @@ done
 Si el chequeo falla, repórtale al usuario **qué claves** faltan (por nombre), pídele que edite
 el `.env` de la raíz del plugin y **no avances** hasta que pase. El chequeo no revela secretos.
 
+## Paso 0.b — Estructura del proyecto (`manager/`) — bootstrap vía `/pm-init`
+
+`/pm-prd` es el **punto de entrada** del flujo: si el proyecto aún no tiene la estructura
+`manager/`, este comando la levanta por su cuenta antes de trabajar el PRD (el desarrollador ya
+no necesita correr `/pm-init` a mano primero).
+
+1. Comprueba si existe **`manager/config.json`** (la identidad del proyecto — FUENTE ÚNICA).
+2. **Si NO existe** (proyecto nuevo): **invoca la skill `pm-ai:pm-init` con la tool `Skill`**,
+   indicándole explícitamente que es un **arranque en modo andamiaje (bootstrap)**: que ejecute
+   **solo los Pasos 0–3** (verificación de `.env`, andamiaje de `manager/`, `.gitignore` e
+   identidad en `config.json` con `prd_id`/`prd_dir` resueltos) y **regrese sin publicar al repo
+   central ni indexar** (no corre sus Pasos 6 ni 7). Al volver, continúa aquí en el Paso 1.
+3. **Si YA existe** `manager/config.json`: salta este paso y ve directo al Paso 1 (lee de ahí la
+   identidad como fuente única, sin re-preguntar).
+
 ## Paso 1 — Entrada (¿continuar, ingerir o crear?)
 
 1. Asegura las carpetas. **Lee `manager/config.json`** (si existe) y toma de ahí la identidad
