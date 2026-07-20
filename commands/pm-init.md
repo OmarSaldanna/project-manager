@@ -76,18 +76,14 @@ el `.env` de la raíz del plugin y **no avances** hasta que pase. El chequeo no 
      respetando `.gitignore` y para `/guardar-cambios` después.
 2. Crea `manager/` y copia desde el plugin (NO se edita su contenido):
    - `mkdir -p manager`
-   - `cp -R "${CLAUDE_PLUGIN_ROOT}/gantt" manager/gantt`
-     (queda `manager/gantt/general.html`, el dashboard **activo** del **gantt general**, con los
-     datos embebidos en `<script id="general-data">window.GENERAL_DATA = {…}</script>`, reflejo
-     de la tabla global `pm_plan_desarrollo`; `manager/gantt/index.html` se copia también pero
-     queda **congelado** como base del futuro gantt **particular**, fuera de alcance por ahora).
-     `/pm-gantt` lee/programa la DB y repinta `general.html`.
-   - `mkdir -p manager/traces && cp "${CLAUDE_PLUGIN_ROOT}/trace/trace.html" manager/traces/trace.html`
-     (deja lista la **plantilla de bitácoras de traza**; `/reporte-cambios` generará al lado copias
-     `trace_*.html` con los datos de cada reporte).
    - `mkdir -p manager/transcripts manager/transcripts-resumidos`
      (carpetas de la función de PRD: los **transcripts originales** y sus **condensados**; el
      **PRD** vive como archivo único `manager/PRD.md`. Las llena `/pm-prd`).
+
+   > Nota: el gantt general se visualiza en la app **frontend-pm** (lee la DB directo); ya **no**
+   > se genera un tablero HTML local en `manager/gantt/`. Las bitácoras de traza
+   > (`manager/traces/`) están **desactivadas** junto con el indexado a DB. Por eso ya no se
+   > copian las carpetas `gantt/` ni `traces/`.
 3. Copia el `CLAUDE.md` oficial a la **raíz** del proyecto:
    - Si NO existe `./CLAUDE.md`: `cp "${CLAUDE_PLUGIN_ROOT}/plantillas/CLAUDE.md" ./CLAUDE.md`.
    - Si YA existe: NO lo sobrescribas. Muéstralo, explica que el oficial cubre los comandos
@@ -96,8 +92,8 @@ el `.env` de la raíz del plugin y **no avances** hasta que pase. El chequeo no 
 ## Paso 2 — `.gitignore`
 
 **De `manager/` se versiona ÚNICAMENTE `manager/PRD.md`**; todo lo demás del directorio
-(gantt, traces, transcripts, transcripts-resumidos, config.json) es estado local y se
-**ignora**. El PRD es el único artefacto que debe quedar versionado y accesible en git.
+(transcripts, transcripts-resumidos, config.json) es estado local y se **ignora**. El PRD es
+el único artefacto que debe quedar versionado y accesible en git.
 
 - Si no existe `.gitignore`, créalo. Si existe, **complétalo** (no lo reescribas).
 - Asegura estas dos líneas (en este orden; la negación re-incluye el PRD):
@@ -266,9 +262,9 @@ FIN PASOS DESACTIVADOS (indexado a DB) -->
 - Resume qué se creó: `manager/`, `CLAUDE.md`, `.gitignore` e identidad en `manager/config.json`
   (`project_id`, `unidad`, `sistema`, `prd_id`, `prd_dir`). *(El indexado a DB está desactivado
   por ahora; no hay totales de `pm_indexar` que reportar.)*
-- Sugiere los siguientes pasos: **`/pm-prd`** para el PRD, **`/pm-gantt`** para la
-  planeación, **`/guardar-cambios`** para los avances posteriores y **`/reporte-cambios`** para
-  generar bitácoras del histórico de cambios (del PRD o del código).
+- Sugiere los siguientes pasos: **`/pm-prd`** para el PRD, **`/pm-gantt`** para programar las
+  fechas del plan de desarrollo y **`/guardar-cambios`** para registrar los avances posteriores
+  en git.
 
 ## Paso 7 — Publicar en el repo central de PRDs (enginecx_prd)
 

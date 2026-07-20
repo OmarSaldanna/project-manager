@@ -1,25 +1,25 @@
 ---
-description: Guarda tu avance del proyecto de forma consistente en dos lugares — lo deja registrado en el historial (git) y actualiza la memoria del proyecto (índice, pm_index) para que las consultas sigan al día. Aplica el criterio de Entidades de Código.
+description: Guarda tu avance del proyecto en el historial (git) y, si aplica, refleja el PRD al repo central. (El indexado a DB está desactivado por ahora.)
 argument-hint: "[contexto del avance / archivos a incluir]"
-allowed-tools: Read, Write, Edit, Bash, mcp__pm-ai__pm_indexar, mcp__pm-ai__pm_proyectos
+allowed-tools: Read, Write, Edit, Bash, mcp__pm-ai__pm_proyectos
 ---
 
-Eres el **Project Manager con IA** guardando un avance del proyecto. Tu trabajo es dejar el
-trabajo registrado en **DOS lugares de forma consistente**: en el **historial del proyecto**
-(uno o varios **commits de git** — la constancia de qué se hizo) y en la **memoria del
-proyecto** (el **índice**, `pm_index` — lo que te permite luego navegar y responder consultas
-sin releer todo). Al indexar aplicas el criterio de **Entidades de Código** (cada tipo de
-archivo se trata distinto). La mecánica completa está en `docs/entidades-y-indexacion.md`.
+Eres el **Project Manager con IA** guardando un avance del proyecto: dejas el trabajo
+registrado en el **historial del proyecto** (uno o varios **commits de git** — la constancia
+de qué se hizo) y, si aplica, reflejas el PRD al repo central.
+
+> **Indexado a DB desactivado temporalmente.** El **Paso 3** (actualizar la memoria del
+> proyecto con `pm_indexar`) y las menciones al índice están **comentados** más abajo y **no se
+> ejecutan** por ahora. Este comando solo registra en **git** (y refleja el PRD). Reactivar el
+> indexado en el futuro es quitar el comentario del Paso 3 y de las notas asociadas.
 
 Contexto que aporta el project manager (puede venir vacío): **$ARGUMENTS**
 
 ## Reglas transversales (de CLAUDE.md — OBLIGATORIAS)
 
 - Flujo SIEMPRE **propuesta → revisión → confirmación**. No registras nada en el historial
-  (`git commit`) ni actualizas la memoria (índice) hasta que el project manager confirme la
-  lista de archivos y el/los mensaje(s).
-- No leas el repo completo. Para actualizar la memoria, delega en la tool `pm_indexar` (ella
-  lee y trocea los archivos); tú solo decides la lista acordada.
+  (`git commit`) hasta que el project manager confirme la lista de archivos y el/los mensaje(s).
+- No leas el repo completo; tú solo decides la lista de archivos acordada para el/los commit(s).
 
 ## Paso 0 — Identidad del proyecto (`manager/config.json`)
 
@@ -36,11 +36,16 @@ Contexto que aporta el project manager (puede venir vacío): **$ARGUMENTS**
    - Tras confirmar, crea `manager/config.json`. Nota: `manager/` está en `.gitignore`,
      así que es local; por eso el `project_id` se deriva de forma determinista (un clon que
      re-inicialice obtiene el mismo id).
-3. Usa siempre `project_id` (+ `unidad`) de este archivo en `pm_indexar` (`nombre` opcional =
+3. La identidad (`project_id`, `sistema`, `prd_dir`) se usa para el **reflejo del PRD** al repo
+   central (ver más abajo).
+
+<!-- INDEXADO A DB DESACTIVADO — no ejecutar
+3-bis. Usa siempre `project_id` (+ `unidad`) de este archivo en `pm_indexar` (`nombre` opcional =
    `project_id`); `repo_url` se obtiene de `git remote get-url origin` (opcional — ya no vive
    en `config.json`). Si el archivo trae `prd_id` (lo agrega `resolve-id` de `/pm-init`),
    pásalo también a `pm_indexar` para que `pm_projects.prd_id` quede poblado y el gantt
    general (`/pm-gantt`) pueda ligar este proyecto a su plan de desarrollo por folio.
+-->
 
 ## Paso 1 — Reporte de cambios y acuerdo de archivos
 
@@ -48,12 +53,14 @@ Contexto que aporta el project manager (puede venir vacío): **$ARGUMENTS**
 2. Muestra un **reporte breve con colores** del trabajo aún sin guardar:
    - `git -c color.ui=always status -sb`
    - opcional: `git -c color.ui=always diff --stat`
-3. Resume, sobre los archivos modificados/añadidos/eliminados, **cuáles se van a leer para
-   actualizar la memoria del proyecto**. Señala cuáles producen entidades (código
-   `.py/.ts/.tsx/.js/.cs/…`, `.md`, `.html`) y cuáles quedan en el historial pero **no**
-   entran a la memoria (json/yaml/config/binarios).
+3. Resume, sobre los archivos modificados/añadidos/eliminados, cuáles entran al/los commit(s).
+
+<!-- INDEXADO A DB DESACTIVADO — no ejecutar
+   Además señalarías cuáles producen entidades (código `.py/.ts/.tsx/.js/.cs/…`, `.md`, `.html`)
+   y cuáles quedan en el historial pero **no** entran a la memoria (json/yaml/config/binarios).
    **NUNCA indexes `.gitignore` ni `CLAUDE.md`**: se guardan en el historial pero jamás se
    pasan a `pm_indexar`.
+-->
 4. **Pregunta al project manager** si desea continuar con esa lista o ajustarla
    (quitar/añadir archivos).
    - Si quiere **añadir un archivo que no aparece** en `git status` (p.ej. ignorado o ya
@@ -76,6 +83,8 @@ Contexto que aporta el project manager (puede venir vacío): **$ARGUMENTS**
    - Captura el identificador resultante (sha): `git rev-parse HEAD` y su fecha
      `git show -s --format=%cI HEAD`.
 
+<!-- PASO 3 — INDEXADO A DB DESACTIVADO — no ejecutar
+
 ## Paso 3 — Actualización de la memoria del proyecto (índice)
 
 Para **cada commit** realizado, llama a `pm_indexar` con:
@@ -91,16 +100,14 @@ Para **cada commit** realizado, llama a `pm_indexar` con:
 `pm_indexar` aplica internamente extracción → reconciliación → embeddings (solo lo que
 cambió) → versionado SCD-2, y registra el proyecto si no existía.
 
+FIN PASO 3 DESACTIVADO -->
+
 ## Paso 4 — Reporte final
 
-Resume el resultado en ambos lados:
+Resume el resultado en el historial:
 - **Historial (git):** commit(s) creados (sha corto + mensaje).
-- **Memoria (índice):** totales que devuelve `pm_indexar` (altas / versiones / sin-cambio /
-  retiradas).
 
-Si la actualización de la memoria falla después de un commit, avísalo claramente: el commit
-ya quedó en el historial y se puede reintentar la indexación volviendo a correr
-`/guardar-cambios` (es idempotente; lo que no cambió no se vuelve a procesar).
+*(El indexado a DB está desactivado por ahora; no hay totales de `pm_indexar` que reportar.)*
 
 ## Reflejo al repo central de PRDs (enginecx_prd)
 

@@ -6,9 +6,9 @@ repositorio completos** — navegas el índice (tools `pm_*`) y lees solo lo nec
 
 ## Comandos del plugin (qué hacen y cuándo)
 
-- **`/pm-init`** — inicializa PM·AI en este repo: crea `manager/`, copia el
-  tablero, prepara el `.gitignore` y hace el **primer indexado completo** del proyecto en
-  la base de datos. Se corre una vez al adoptar PM·AI.
+- **`/pm-init`** — inicializa PM·AI en este repo: crea `manager/`, prepara el `.gitignore` y
+  resuelve la identidad del proyecto en `config.json`. Se corre una vez al adoptar PM·AI (lo
+  invoca `/pm-prd` por su cuenta la primera vez). *(El indexado a DB está desactivado por ahora.)*
 - **`/pm-prd`** — construye/mantiene el **PRD** (`manager/PRD.md`, **único** por proyecto)
   siguiendo los prompts de Engine: si ya existe lo continúa integrando el feedback de
   transcripts nuevos; si no, pregunta si partir de un PRD existente o crear uno nuevo. Define
@@ -18,19 +18,12 @@ repositorio completos** — navegas el índice (tools `pm_*`) y lees solo lo nec
   **cross-proyecto y cross-desarrollador** que vive en la tabla global `pm_plan_desarrollo`
   (folio, estatus, responsable y días estimados los alimentan los desarrolladores por SQL
   directo). El comando **solo lee** los planes y **solo programa fechas** (en días hábiles),
-  ligando cada plan a este proyecto por `folio_prd` → `prd_id`. El dashboard
-  `manager/gantt/general.html` **embebe una copia** de la DB. El gantt **particular** (tareas
-  y objetivos de este proyecto) queda **fuera de alcance por ahora**.
+  ligando cada plan a este proyecto por `folio_prd` → `prd_id`. La **visualización** la ofrece
+  la app **frontend-pm** (lee la DB directo). El gantt **particular** (tareas y objetivos de
+  este proyecto) queda **fuera de alcance por ahora**.
 - **`/guardar-cambios`** — guarda tu avance: lo deja registrado en el **historial (commit[s]
-  en git)** y actualiza la **memoria del proyecto** (`pm_index`) aplicando el criterio de
-  Entidades de Código. Es el flujo de trabajo habitual cada vez que hay avances.
-- **`/reporte-cambios`** — genera un **reporte HTML de bitácora** (en `manager/traces/`) con el
-  **histórico de cambios**. Por defecto apunta a **`manager/PRD.md`**; también acepta una
-  **entidad**, un **archivo** o un **commit**: línea de tiempo de versiones, qué cambió y el
-  **diff por versión**. Útil para revisar la evolución del PRD o del código.
-
-Implicación clave: el **código y la documentación se indexan** en una base de datos
-externa; por eso navegas con las tools en vez de leer todo el repo.
+  en git)** y, si aplica, refleja el PRD al repo central. Es el flujo de trabajo habitual cada
+  vez que hay avances. *(La actualización del índice a DB está desactivada por ahora.)*
 
 ## Estructura local (`manager/`)
 
@@ -42,8 +35,6 @@ manager/
 ├─ PRD.md                   # EL PRD del proyecto (único). Sigue la plantilla de Engine.
 ├─ transcripts/             # transcripts/documentos originales
 ├─ transcripts-resumidos/   # condensados de cada transcript (insumo del PRD)
-├─ gantt/                   # dashboard del gantt general (general.html con datos embebidos = reflejo de la DB)
-├─ traces/                  # plantilla + bitácoras de traza generadas por /reporte-cambios
 └─ config.json              # identidad del proyecto (project_id, unidad, sistema, prd_id, prd_dir)
 ```
 
@@ -97,6 +88,8 @@ siempre a través del bin.
 2. `pm_navegar` / `pm_buscar` → ubica el símbolo o chunk relevante (metadata, barato).
 3. Lee SOLO ese archivo/sección. `pm_traza` para la historia de un símbolo.
 
+<!-- TRAZABILIDAD DE CÓDIGO — DESACTIVADA (depende del índice a DB, hoy apagado; /reporte-cambios está deshabilitado)
+
 ## Trazabilidad de código (changelog y `/reporte-cambios`)
 
 - `pm_traza(entity_id)` es un **changelog por entidad**: cada versión trae `cambio` (qué
@@ -108,23 +101,19 @@ siempre a través del bin.
   una entidad, un archivo o un commit); queda en `manager/traces/`.
 - El `cambio`/diff se puebla **de aquí en adelante**: lo indexado antes de esta capacidad
   aparece como "diff no disponible".
+-->
 
-## Gantt general de planes de desarrollo (DB `pm_plan_desarrollo` → `manager/gantt/general.html`)
+## Gantt general de planes de desarrollo (DB `pm_plan_desarrollo`)
 
 El **gantt general** es la vista **cross-proyecto y cross-desarrollador** que vive en la tabla
 global `pm_plan_desarrollo`: una fila por plan (`folio_prd` tipo `PJ6215`, `estatus`,
 `responsable`, `dias` estimados, y `fecha_inicio`/`fecha_fin` una vez programadas). Los
 **desarrolladores** alimentan folio/estatus/responsable/días por SQL directo; PM·AI **solo
 lee** y **solo programa fechas** (en días hábiles L–V) con `/pm-gantt`. Cada plan se liga a su
-proyecto (y de ahí al índice de código) por `folio_prd` → `pm_projects.prd_id` → `project_id`
-— el enlace lo puebla el `prd_id` de `manager/config.json`, que `/pm-init` y
-`/guardar-cambios` propagan al llamar a `pm_indexar`.
+proyecto por `folio_prd` → `pm_projects.prd_id` → `project_id`.
 
-El dashboard `manager/gantt/general.html` **embebe una copia** de esos datos en
-`<script id="general-data">window.GENERAL_DATA = {…}</script>` (reflejo de la DB; planes
-agrupados por responsable, barras por PRD sobre el calendario, línea vertical en el **día de
-hoy**, y una lista de pendientes = aprobados sin fecha). Gestiónalo con `/pm-gantt`, que lee/
-programa la DB y **repinta** el HTML.
+La **visualización** del gantt general la ofrece la app **frontend-pm** (lee la DB directo);
+ya **no** se genera un tablero HTML local en `manager/gantt/`.
 
 El **gantt particular** (tareas y objetivos puntuales de cada proyecto, con % de avance
 derivado) está **retirado temporalmente**; se rediseñará en una fase posterior.

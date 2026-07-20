@@ -6,14 +6,15 @@ agente navega y mantiene el proyecto **sin leer repositorios completos**.
 
 ## Qué hace
 
-- **Índice navegable** del código y la documentación (símbolos, chunks de markdown, etc.) en
-  una base de datos externa, con **versionado por entidad** (changelog y diffs).
 - **PRD** del proyecto (`manager/PRD.md`) construido siguiendo la entrevista estándar de Engine.
 - **Gantt general** de planes de desarrollo (`pm_plan_desarrollo`, cross-proyecto y por
-  responsable): consulta estados y programa fechas por PRD. El gantt particular por proyecto
-  queda para una fase posterior.
-- **Commits consistentes**: git + índice siempre sincronizados.
-- **Bitácoras de trazabilidad** en HTML.
+  responsable): consulta estados y programa fechas por PRD. Su visualización vive en la app
+  **frontend-pm** (lee la DB directo). El gantt particular por proyecto queda para una fase
+  posterior.
+- **Avances en git**: registra tu trabajo en el historial y refleja el PRD al repo central.
+
+> **Nota:** el **índice de código a DB** (símbolos, versionado por entidad) y las **bitácoras
+> de trazabilidad** (`/reporte-cambios`) están **desactivados temporalmente**.
 
 ## Comandos
 
@@ -23,14 +24,13 @@ agente navega y mantiene el proyecto **sin leer repositorios completos**.
 | `/pm-prd` | **Punto de entrada del día a día.** Construye/mantiene el PRD (`manager/PRD.md`); si el proyecto aún no tiene `manager/`, la levanta por su cuenta. |
 | `/pm-init` | Arma la estructura `manager/` del proyecto (lo invoca `/pm-prd` la primera vez; también puede correrse directo). |
 | `/pm-gantt` | Gantt general de planes de desarrollo (consulta estados; programa fechas). |
-| `/guardar-cambios` | Guarda tu avance: registro en el historial (git) + actualización de la memoria del proyecto (índice). |
-| `/reporte-cambios` | Reporte HTML del histórico de cambios (por defecto `manager/PRD.md`; también entidad/archivo/commit). |
+| `/guardar-cambios` | Guarda tu avance: registro en el historial (git) y reflejo del PRD al repo central. |
 
 ## Primeros pasos (flujo)
 
 1. **Una sola vez, al añadir el plugin:** corre **`/instalar`**. Coloca el `.env` en la raíz del
    plugin, te ofrece poner **tus propias credenciales de GitHub** (para no suplantar tu cuenta al
-   publicar al repo central), compila los paquetes y verifica la conexión al índice.
+   publicar al repo central), compila los paquetes y verifica la conexión a la base de datos.
 2. **El día a día arranca en `/pm-prd`.** No necesitas correr `/pm-init` a mano: si el proyecto
    aún no tiene la estructura `manager/`, `/pm-prd` la levanta por su cuenta antes de trabajar el
    PRD.

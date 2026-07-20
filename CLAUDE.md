@@ -41,21 +41,20 @@ otra persona). El comando `/instalar` verifica identidad y acceso al repo. **NUN
    fechas; el gantt particular (tareas/objetivos por proyecto) queda para una fase posterior.
    `ESTADO.md` sigue resumiendo estado, secuencia de trabajo y próximos pasos del proyecto.
 
-## Protocolo para guardar avances (historial + índice, siempre vía `/guardar-cambios`)
-1. Para guardar avances del proyecto DEBES usar **`/guardar-cambios`**. Nunca hagas un
-   `git commit` suelto: dejaría el historial (git) y la memoria del proyecto (`pm_index`)
-   **desincronizados**. La esencia del proyecto es que ambos lados queden **consistentes** en
-   cada avance.
-2. `/guardar-cambios` deja el trabajo en **DOS lugares**: el/los **commit(s) de git**
-   (historial) y el **índice** (memoria del proyecto; `pm_indexar` aplica el criterio de
-   Entidades de Código + versionado SCD-2). La mecánica completa de la indexación está en
-   `docs/entidades-y-indexacion.md`.
-3. Flujo SIEMPRE **propones → el humano revisa → confirma**: no commiteas ni indexas hasta
-   que el project manager confirme la lista de archivos y el/los mensaje(s).
-4. Si algún cambio toca algo comprometido o sensible, DETENTE y confírmalo explícitamente
+## Protocolo para guardar avances (historial, vía `/guardar-cambios`)
+1. Para guardar avances del proyecto usa **`/guardar-cambios`**: registra el trabajo en el
+   **historial (git)** y, si aplica, refleja el PRD al repo central.
+2. Flujo SIEMPRE **propones → el humano revisa → confirma**: no commiteas hasta que el project
+   manager confirme la lista de archivos y el/los mensaje(s).
+3. Si algún cambio toca algo comprometido o sensible, DETENTE y confírmalo explícitamente
    antes de incluirlo.
-5. Excepción: si el usuario pide un `git commit` sin indexar, señálale que el índice
-   quedará desactualizado y propón cerrar con `/guardar-cambios`. No lo resuelvas en silencio.
+
+> **Indexado a DB desactivado temporalmente.** La actualización del **índice** (memoria del
+> proyecto; `pm_indexar` + Entidades de Código + versionado SCD-2) está **comentada** en
+> `/guardar-cambios` y **no se ejecuta**. La mecánica sigue documentada en
+> `docs/entidades-y-indexacion.md` para cuando se reactive.
+
+<!-- TRAZABILIDAD DE CÓDIGO — DESACTIVADA (depende del índice a DB, hoy apagado)
 
 ## Trazabilidad de código (changelog y `/reporte-cambios`)
 1. `pm_traza(entity_id)` NO es solo la lista de versiones: es un **changelog por entidad**. Cada
@@ -69,6 +68,7 @@ otra persona). El comando `/instalar` verifica identidad y acceso al repo. **NUN
    una **entidad**, un **archivo** o un **commit**). El reporte se guarda en `manager/traces/`.
 4. El `cambio`/diff se puebla **de aquí en adelante**: las versiones indexadas antes de esta
    capacidad no guardan el cuerpo y aparecen como "diff no disponible".
+-->
 
 ## Documento maestro
 La arquitectura completa y las decisiones (D1–D12) viven en `prompt.md`. Es la fuente de verdad.

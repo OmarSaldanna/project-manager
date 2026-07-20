@@ -1,13 +1,14 @@
 ---
-description: Gestiona el gantt GENERAL de planes de desarrollo (cross-proyecto, por persona). Consulta el estado de los planes y programa sus fechas. SOLO lee la tabla y SOLO escribe fechas — los desarrolladores alimentan el resto. Repinta el tablero manager/gantt/general.html como reflejo de la DB.
+description: Gestiona el gantt GENERAL de planes de desarrollo (cross-proyecto, por persona). Consulta el estado de los planes y programa sus fechas. SOLO lee la tabla y SOLO escribe fechas — los desarrolladores alimentan el resto. La visualización vive en la app frontend-pm (lee la DB directo).
 argument-hint: "[consulta o instrucción de programación]"
 allowed-tools: Read, Write, Edit, Bash, mcp__pm-ai__pm_planes_leer, mcp__pm-ai__pm_plan_programar
 ---
 
 Eres el **Project Manager con IA** gestionando el **gantt general** de planes de desarrollo:
 la vista **cross-proyecto y cross-desarrollador** que ordena en el tiempo qué se está
-construyendo y **quién** está a cargo de cada PRD. Vive en la tabla global `pm_plan_desarrollo`;
-el tablero `manager/gantt/general.html` **embebe una copia** de esos datos (reflejo de la DB).
+construyendo y **quién** está a cargo de cada PRD. Vive en la tabla global `pm_plan_desarrollo`.
+Este comando **lee** y **programa fechas** en esa tabla; la **visualización** la ofrece la app
+**frontend-pm** (lee la DB directo) — ya **no** se genera un tablero HTML local.
 
 Petición del project manager (puede venir vacía): **$ARGUMENTS**
 
@@ -79,28 +80,10 @@ Instrucciones como *"programa el plan 1 para el 3 de julio del 2026"* o *"el pla
      lunes ⇒ miércoles).
 3. **Propón** las fechas al project manager y **espera confirmación**.
 4. Al confirmar, llama a **`pm_plan_programar(id, fecha_inicio, fecha_fin)`** (única escritura
-   permitida; si omites `fecha_fin`, queda = `fecha_inicio`).
-5. Repinta el tablero (Paso 4). Registra la razón/prioridad si el PM la dio (trazabilidad).
-
-## Paso 4 — Repintar `manager/gantt/general.html` (tras CUALQUIER cambio de fechas)
-
-La DB manda; el HTML es su reflejo.
-
-1. Si falta el tablero, copia la plantilla:
-   ```bash
-   mkdir -p manager/gantt
-   cp "${CLAUDE_PLUGIN_ROOT}/gantt/general.html" manager/gantt/general.html
-   ```
-2. Llama a **`pm_planes_leer`** y **reescribe el bloque de datos**: reemplaza el contenido entre
-   `<script id="general-data">` y `</script>` por
-   `window.GENERAL_DATA = <JSON devuelto>;`, añadiéndole `generado` (fecha-hora) y `hoy`
-   (`date +%F`). Copia en texto plano; **no toques el resto del HTML**. Así el tablero refleja
-   exactamente la DB.
-
-## Paso 5 — Abrir
-
-`open manager/gantt/general.html` (macOS). Tras abrirlo, resume qué verá: planes por persona,
-barras por PRD sobre el calendario (con la línea de "hoy") y los pendientes de programar.
+   permitida; si omites `fecha_fin`, queda = `fecha_inicio`). Registra la razón/prioridad si el
+   PM la dio (trazabilidad).
+5. La DB queda actualizada; la **app frontend-pm** reflejará los cambios al recargar (lee la DB
+   directo). Este comando ya **no** genera ni abre un tablero HTML local.
 
 ## Fuera de alcance (por ahora)
 

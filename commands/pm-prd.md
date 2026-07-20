@@ -237,7 +237,7 @@ Antes de dar por terminada la sesión, comprueba y reporta:
    regístralo con su razón en lugar de omitirlo.
 
 Resume el PRD resultante en pocas líneas. Recuerda guardar el avance de **código** con
-**`/guardar-cambios`** para dejar el historial (git) y la memoria del proyecto (índice) consistentes.
+**`/guardar-cambios`** para registrarlo en el historial (git).
 
 ## Publicación al repo central (enginecx_prd) — CULMINA la sesión
 
@@ -277,13 +277,13 @@ córrelo para cerrar: `node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js
 ## Paso final (OPCIONAL) — Guardar y subir los cambios
 
 Una vez publicado el PRD, ofrece al project manager guardar también el avance del proyecto
-(historial en git + memoria del proyecto). Hazlo con una **pregunta de opción múltiple (select)**:
+en el **historial (git)**. Hazlo con una **pregunta de opción múltiple (select)**:
 
 **¿Deseas guardar y subir los cambios?**
 - **Sí** — guardar cambios con `/guardar-cambios`.
 - **No** — no guardar ni subir cambios por ahora.
 
 - Si responde **Sí**, invoca el comando **`/guardar-cambios`** y deja que ese flujo se encargue
-  (propuesta → revisión → confirmación de archivos y mensaje, commit[s] en git e indexación).
+  (propuesta → revisión → confirmación de archivos y mensaje, commit[s] en git).
 - Si responde **No**, cierra la sesión sin guardar; recuérdale que puede correr
-  `/guardar-cambios` cuando quiera para dejar el historial y la memoria del proyecto consistentes.
+  `/guardar-cambios` cuando quiera para registrar el avance en el historial (git).

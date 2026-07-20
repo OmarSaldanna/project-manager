@@ -1,8 +1,16 @@
 ---
-description: Genera un reporte HTML (bitácora) con el histórico de cambios de un documento o pieza del proyecto (por defecto, manager/PRD.md), en manager/traces/. Muestra, por cada pieza, su línea de tiempo de versiones, la magnitud del cambio y el diff estilo git.
+description: "[DESACTIVADO] Reporte HTML de bitácora del histórico de cambios. Depende del índice a DB (hoy apagado) y de la carpeta manager/traces/; deshabilitado por ahora."
 argument-hint: "[vacío = PRD.md | ruta de archivo | nombre de pieza/función | commit]"
 allowed-tools: Read, Write, Edit, Bash, mcp__pm-ai__pm_proyectos, mcp__pm-ai__pm_navegar, mcp__pm-ai__pm_buscar, mcp__pm-ai__pm_recuperar, mcp__pm-ai__pm_traza, mcp__pm-ai__pm_commit
 ---
+
+> **⛔ COMANDO DESACTIVADO temporalmente.** `/reporte-cambios` depende del **índice de código
+> (DB)** —hoy apagado— y genera bitácoras en `manager/traces/`, una función que **no se usa**
+> por ahora. Si te invocan, explícalo y **detente**: no ejecutes los pasos de abajo. Para
+> reactivarlo: reactiva el indexado a DB, restablece la carpeta/plantilla de traza y quita las
+> marcas de comentario del cuerpo.
+
+<!-- CUERPO DESACTIVADO — no ejecutar
 
 Eres el **Project Manager con IA** generando una **bitácora del histórico de cambios**: un
 reporte HTML que muestra, por cada pieza del proyecto (un documento como el PRD, un archivo o
@@ -124,3 +132,5 @@ Notas:
 1. `open manager/traces/trace_<name>.html` (macOS).
 2. Resume qué verá: nº de piezas, total de versiones y los cambios más relevantes (p. ej.
    "la sección de alcance del PRD cambió en el commit `abc1234`").
+
+FIN CUERPO DESACTIVADO -->
