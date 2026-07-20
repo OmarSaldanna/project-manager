@@ -104,9 +104,10 @@ ya quedó en el historial y se puede reintentar la indexación volviendo a corre
 
 ## Reflejo al repo central de PRDs (enginecx_prd)
 
-> **Identidad git:** el bin `prd-sync` usa el repo/usuario/email/token del `.env` del plugin
-> (`ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`, `ENGINECX_PRD_GIT_EMAIL`,
-> `ENGINECX_PRD_GIT_TOKEN`). No hagas `git` manual sobre `enginecx_prd` ni uses tu identidad local.
+> **Identidad git:** el bin `prd-sync` toma del `.env` solo `ENGINECX_PRD_REPO` (ubicación del
+> repo) y usa la **identidad y credenciales de git del equipo** (`user.name`/`user.email` +
+> credential helper/`gh`/SSH) para clonar/commitear/pushear. El `.env` **no** lleva credenciales
+> de GitHub. Sigue haciendo TODO vía el bin; no ejecutes `git` manual sobre `enginecx_prd`.
 
 Tras actualizar la memoria y registrar el avance en el historial, refleja `manager/` y
 commitea en el repo central (usa `prd_dir` de `manager/config.json`):

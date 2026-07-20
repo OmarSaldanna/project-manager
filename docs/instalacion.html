@@ -114,7 +114,7 @@
         <li><code>supabase_service_key</code> — acceso de servicio a la base compartida.</li>
         <li><code>embeddings_key</code> — obligatoria, para generar los embeddings del índice.</li>
         <li><code>llm_key</code> — opcional; sin ella, las descripciones de código usan un fallback sin LLM.</li>
-        <li><code>.env</code> de <code>enginecx_prd</code> — <code>ENGINECX_PRD_REPO</code>, <code>ENGINECX_PRD_GIT_USER</code>, <code>ENGINECX_PRD_GIT_TOKEN</code>, <code>ENGINECX_PRD_GIT_EMAIL</code> (solo si la persona va a usar <code>/pm-prd</code>).</li>
+        <li><code>ENGINECX_PRD_REPO</code> — ubicación del repo central de PRDs (solo si la persona va a usar <code>/pm-prd</code>). <b>No</b> se comparten credenciales de GitHub: <code>prd-sync</code> publica con la identidad y credenciales de git ya configuradas en el equipo (<code>gh</code>/credential helper/SSH), que <code>/instalar</code> verifica.</li>
       </ul>
 
       <p><b>Flujo por Project Manager:</b></p>

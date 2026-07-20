@@ -10,10 +10,12 @@ para dejar el entorno listo: `.env` colocado, credenciales de GitHub **propias**
 desarrollador, paquetes compilados y conexión al índice (Supabase/MCP) verificada. Después de
 esto, el flujo diario empieza en **`/pm-prd`**.
 
-> **Por qué existe este comando.** El `.env` del plugin lleva la identidad git que usa
-> `prd-sync` para publicar al repo central. Si un desarrollador con cuenta de GitHub propia usa
-> el `.env` de otra persona tal cual, sus credenciales pueden quedar suplantadas/cacheadas por el
-> gestor de credenciales de git de su sistema. Por eso el Paso 2 le ofrece poner **sus** datos.
+> **Por qué existe este comando.** `prd-sync` publica al repo central usando la **identidad y
+> las credenciales de git YA configuradas en el equipo** (credential helper / `gh` / SSH); el
+> `.env` **no** lleva credenciales de GitHub. Así nunca se distribuye ni se cachea el token de
+> otra persona (la causa de la suplantación que veíamos antes). El Paso 2 solo **verifica** que
+> el equipo tenga usuario git y acceso al repo, y si falta algo, guía al desarrollador a
+> resolverlo por fuera (crear cuenta/token, pedir acceso).
 
 ## Reglas transversales (de CLAUDE.md — OBLIGATORIAS)
 
@@ -43,11 +45,10 @@ MCP y los CLIs (`prd-sync`) por su cuenta (Node lo lee, no Claude Code).
    ENV="${CLAUDE_PLUGIN_ROOT}/.env"
    [ -f "$ENV" ] || { echo "✗ No existe $ENV — copia .env.example a la raíz del plugin y complétalo"; exit 1; }
    miss=0
-   for k in SUPABASE_URL SUPABASE_SERVICE_KEY PM_EMBEDDINGS_KEY \
-            ENGINECX_PRD_REPO ENGINECX_PRD_GIT_USER ENGINECX_PRD_GIT_EMAIL ENGINECX_PRD_GIT_TOKEN; do
+   for k in SUPABASE_URL SUPABASE_SERVICE_KEY PM_EMBEDDINGS_KEY ENGINECX_PRD_REPO; do
      v=$(grep -E "^${k}=" "$ENV" | head -1 | cut -d= -f2- | sed 's/[[:space:]]*#.*$//; s/^[[:space:]]*//; s/[[:space:]]*$//')
      case "$v" in
-       ""|*...|"https://TU-PROYECTO.supabase.co"|"tu-usuario"|"tu-correo@enginecx.com"|*"/ORG/"*)
+       ""|*...|"https://TU-PROYECTO.supabase.co"|*"/ORG/"*)
          echo "✗ $k — falta o sigue con valor de ejemplo"; miss=1 ;;
        *) echo "✓ $k" ;;
      esac
@@ -56,32 +57,48 @@ MCP y los CLIs (`prd-sync`) por su cuenta (Node lo lee, no Claude Code).
    ```
 
    Claves requeridas: **Índice/MCP** — `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`,
-   `PM_EMBEDDINGS_KEY`. **Repo central** — `ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`,
-   `ENGINECX_PRD_GIT_EMAIL`, `ENGINECX_PRD_GIT_TOKEN`. Si el chequeo falla, dile **qué claves**
-   faltan (por nombre) y **no avances** hasta que pase.
+   `PM_EMBEDDINGS_KEY`. **Repo central** — `ENGINECX_PRD_REPO` (solo la ubicación del repo; el
+   `.env` **ya no lleva** credenciales de GitHub — esas las aporta el git del equipo, ver Paso 2).
+   Si el chequeo falla, dile **qué claves** faltan (por nombre) y **no avances** hasta que pase.
 
-## Paso 2 — Credenciales de GitHub del desarrollador
+## Paso 2 — Verificar el git del equipo (identidad + acceso al repo central)
 
-El `.env` trae una identidad git (`ENGINECX_PRD_GIT_USER`, `ENGINECX_PRD_GIT_EMAIL`,
-`ENGINECX_PRD_GIT_TOKEN`) que `prd-sync` usa para publicar al repo central `enginecx_prd`.
+`prd-sync` clona/commitea/pushea a `enginecx_prd` con la **identidad y credenciales de git ya
+configuradas en el equipo** — NO con datos del `.env`. Aquí solo **verificas** que todo esté
+listo; nunca escribes credenciales en ningún lado.
 
-Pregunta con un **selector** (AskUserQuestion), pregunta **corta** («¿Tienes cuenta de GitHub
-propia?») y EXACTAMENTE estas dos opciones:
+Corre este preflight (no revela secretos: `ls-remote` usa el credential helper/SSH del equipo):
 
-- **A — No tengo cuenta de GitHub, usa la del `.env`.** → No cambies nada; continúa al Paso 3.
-- **B — Sí tengo cuenta de GitHub.** → En un mensaje normal, muéstrale la **ruta exacta**
-  `${CLAUDE_PLUGIN_ROOT}/.env` e indícale reemplazar **sus** valores en estas tres claves:
-  - `ENGINECX_PRD_GIT_USER` — tu usuario de GitHub.
-  - `ENGINECX_PRD_GIT_EMAIL` — tu correo de GitHub.
-  - `ENGINECX_PRD_GIT_TOKEN` — un **token propio** con acceso al repo `enginecx_prd`.
+```bash
+ROOT="${CLAUDE_PLUGIN_ROOT}"
+echo "— git instalado —"; git --version || { echo "✗ git no está instalado"; }
+echo "— identidad git —"
+n=$(git config --get user.name); e=$(git config --get user.email)
+[ -n "$n" ] && echo "✓ user.name: $n" || echo "✗ user.name sin configurar"
+[ -n "$e" ] && echo "✓ user.email: $e" || echo "✗ user.email sin configurar"
+echo "— acceso al repo central —"
+REPO=$(grep -E "^ENGINECX_PRD_REPO=" "$ROOT/.env" | head -1 | cut -d= -f2- | sed 's/[[:space:]]*#.*$//; s/^[[:space:]]*//; s/[[:space:]]*$//')
+if [ -z "$REPO" ]; then echo "✗ falta ENGINECX_PRD_REPO en .env";
+elif GIT_TERMINAL_PROMPT=0 git ls-remote "$REPO" -h >/dev/null 2>&1; then echo "✓ acceso OK a $REPO";
+else echo "✗ sin acceso a $REPO con las credenciales actuales del equipo"; fi
+```
 
-  Recuérdale que así los commits al repo central quedan a **su** nombre y no se suplanta ninguna
-  cuenta. Luego, con **otro selector** de dos opciones, **espera su confirmación** antes de
-  seguir: **«Listo, ya edité el `.env`»** / **«Necesito ayuda»**. No avances hasta el «Listo»
-  (con «Necesito ayuda», abre conversación para apoyarlo y vuelve a este selector).
+Interpreta el resultado y **actúa según lo que falte** (ofrece ayuda desde la terminal en lo que
+puedas; lo que sea de GitHub, guía al desarrollador a hacerlo por fuera):
 
-Tras confirmar, re-corre el chequeo del Paso 1.3 para asegurar que las tres claves siguen
-completas (no quedaron con el valor de ejemplo).
+- **`git` no instalado** → indícale instalarlo (p. ej. `git-scm.com` o el gestor de su SO).
+- **`user.name`/`user.email` sin configurar** → ofrécete a configurarlos tú:
+  `git config --global user.name "Su Nombre"` y `git config --global user.email "su-correo"`.
+  Estos son la **autoría** de sus commits al repo central; que sean sus datos reales.
+- **Sin cuenta de GitHub** → guíalo a crearla en `github.com`.
+- **Sin credenciales / token** → guíalo a autenticarse con **`gh auth login`** (recomendado) o a
+  crear un **PAT** y guardarlo en el credential helper del SO. No pongas el token en el `.env`.
+- **Sin acceso al repo `enginecx_prd`** → dile que solicite acceso al owner del repo; no puede
+  publicar PRDs hasta tenerlo.
+
+Cuando algo falte, **no avances**: usa un **selector** de dos opciones — **«Listo, ya lo
+resolví»** / **«Necesito ayuda»** — y **re-corre el preflight** hasta que los tres chequeos
+(identidad + acceso) salgan ✓. Si todo salió ✓ a la primera, continúa al Paso 3.
 
 ## Paso 3 — Compilar los paquetes y verificar la conexión
 
@@ -110,9 +127,9 @@ completas (no quedaron con el valor de ejemplo).
 ## Paso 4 — Cierre
 
 Resume el resultado de la instalación:
-- `.env` colocado y completo (7 claves ✓).
-- Credenciales de GitHub: opción **A** (compartidas del `.env`) u opción **B** (propias del
-  desarrollador).
+- `.env` colocado y completo (4 claves ✓: Supabase URL/key, embeddings key, `ENGINECX_PRD_REPO`).
+- git del equipo verificado: identidad (`user.name`/`user.email`) y acceso a `enginecx_prd` ✓
+  (sin credenciales de GitHub en el `.env`).
 - `pnpm build` OK y bins presentes.
 - Conexión MCP/Supabase verificada (`pm_proyectos` respondió).
 

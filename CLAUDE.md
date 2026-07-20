@@ -18,13 +18,15 @@ construye `/pm-init`). Antes de pedirle CUALQUIERA de estos datos al usuario, **
 **falta** en el archivo y, tras confirmarlo, **persístelo en `config.json`** (no lo dejes solo en
 la conversación) para que siga siendo la fuente única la próxima vez.
 
-## Repo central de PRDs (`enginecx_prd`) — identidad git del `.env`
+## Repo central de PRDs (`enginecx_prd`) — identidad git del EQUIPO
 Todo `git` que toque `enginecx_prd` (clonar, commitear, pushear) se hace SIEMPRE con el bin
-`prd-sync` (`node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" <sub>`), que toma la
-identidad del **`.env` del plugin**: `ENGINECX_PRD_REPO` (repo), `ENGINECX_PRD_GIT_USER` +
-`ENGINECX_PRD_GIT_TOKEN` (clone/push autenticados) y `ENGINECX_PRD_GIT_USER` +
-`ENGINECX_PRD_GIT_EMAIL` (autor/committer del commit). **NUNCA** ejecutes `git` manual sobre
-`enginecx_prd` ni uses tu identidad o credenciales locales: siempre a través del bin.
+`prd-sync` (`node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" <sub>`). Del `.env` solo
+lee `ENGINECX_PRD_REPO` (la **ubicación** del repo, que no es un secreto); la **identidad y las
+credenciales las aporta el git ya configurado en el equipo**: `user.name`/`user.email` globales
+para la autoría del commit, y el credential helper / `gh` / SSH para autenticar clone/push. El
+`.env` **NO** lleva credenciales de GitHub (así nunca se distribuye ni se suplanta el token de
+otra persona). El comando `/instalar` verifica identidad y acceso al repo. **NUNCA** ejecutes
+`git` manual sobre `enginecx_prd`: siempre a través del bin.
 
 ## Protocolo del archivo de estado (`ESTADO.md`)
 1. AL INICIAR cualquier sesión sobre un proyecto, tu PRIMERA acción es **leer su `ESTADO.md`**.
@@ -128,8 +130,9 @@ El servidor MCP (`.mcp.json`, raíz de este repo) toma Supabase + endpoint de em
 carga con `process.loadEnvFile` (`loadConfig` en `packages/core/src/env.ts`) — igual que
 `prd-sync`. Instalar el plugin NO pide credenciales (no hay `userConfig`); tras instalar, se
 coloca el `.env` (copia de `.env.example`) en la raíz del plugin. `.mcp.json` solo arranca el
-MCP; toda la config vive en el `.env`, que es la fuente única (incluye también las
-`ENGINECX_PRD_*` de `prd-sync`).
+MCP; toda la config vive en el `.env`, que es la fuente única (incluye también
+`ENGINECX_PRD_REPO`, la ubicación del repo central que usa `prd-sync` — el `.env` no lleva
+credenciales de GitHub; el auth de `enginecx_prd` lo aporta el git del equipo, ver arriba).
 
 ### No confundir
 - `CLAUDE.md` (este archivo, raíz) — instrucciones vivas del agente, incluidas las de este

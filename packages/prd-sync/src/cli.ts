@@ -2,7 +2,7 @@
 import { join } from "node:path";
 import { resolverPrdDir } from "./identidad.js";
 import { espejar } from "./mirror.js";
-import { ensureRepo, commitDir, pushRepo, redactarUrl, construirUrlAutenticada } from "./git.js";
+import { ensureRepo, commitDir, pushRepo } from "./git.js";
 import { escribirIdentidadPrd, leerConfig } from "./config.js";
 import { cargarEnv, pluginRoot } from "./env.js";
 
@@ -32,8 +32,8 @@ function main(): void {
     case "ensure-repo": {
       const env = cargarEnv();
       if (!env.repo) throw new Error("Falta ENGINECX_PRD_REPO en .env");
-      ensureRepo(repoDir, env.repo, env.user, env.token);
-      console.log(`enginecx_prd listo (${redactarUrl(construirUrlAutenticada(env.repo, env.user, "•"))}).`);
+      ensureRepo(repoDir, env.repo);
+      console.log(`enginecx_prd listo (${env.repo}).`);
       break;
     }
     case "resolve-id": {
@@ -53,17 +53,14 @@ function main(): void {
       break;
     }
     case "commit": {
-      const env = cargarEnv();
       const dir = requerido(rest, "--dir");
       const message = requerido(rest, "--message");
-      const hubo = commitDir(repoDir, dir, message, env.user, env.email);
+      const hubo = commitDir(repoDir, dir, message);
       console.log(hubo ? `Commit en enginecx_prd: ${message}` : "Sin cambios; nada que commitear.");
       break;
     }
     case "push": {
-      const env = cargarEnv();
-      if (!env.repo) throw new Error("Falta ENGINECX_PRD_REPO en .env");
-      pushRepo(repoDir, env.repo, env.user, env.token);
+      pushRepo(repoDir);
       console.log("Push a enginecx_prd hecho.");
       break;
     }

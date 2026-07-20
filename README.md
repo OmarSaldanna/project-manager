@@ -46,8 +46,9 @@ agente, en [`CLAUDE.md`](CLAUDE.md).
 Instalar el plugin **no pide credenciales**. El servidor MCP necesita credenciales (Supabase +
 proveedor de embeddings/LLM) que lee de un `.env` en la **raíz del plugin**: lo carga el propio
 proceso Node del MCP (`process.loadEnvFile`), no Claude Code. **El comando `/instalar` coloca ese
-`.env`** (a partir de `.env.example`) y te guía para completarlo; ese mismo `.env` lleva también
-la identidad git de `enginecx_prd` que usa `prd-sync`. Si tienes cuenta de GitHub propia,
-`/instalar` te pide poner **tus** credenciales (`ENGINECX_PRD_GIT_USER`/`_EMAIL`/`_TOKEN`) para
-que los commits al repo central queden a tu nombre y no se suplante ninguna cuenta. **Nunca**
-subas tu `.env`.
+`.env`** (a partir de `.env.example`) y te guía para completarlo. Para el repo central de PRDs, el
+`.env` solo lleva `ENGINECX_PRD_REPO` (la ubicación del repo) — **no** guarda credenciales de
+GitHub: `prd-sync` publica con la **identidad y credenciales de git ya configuradas en tu equipo**
+(`user.name`/`user.email` + credential helper / `gh` / SSH), así los commits quedan a tu nombre y
+nunca se distribuye ni se suplanta el token de otra persona. `/instalar` verifica que tengas
+identidad git y acceso al repo. **Nunca** subas tu `.env`.

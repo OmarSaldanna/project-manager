@@ -81,14 +81,15 @@ en `config.json`** (no lo dejes solo en la conversación).
 `project_id`, `unidad` y `sistema` los recolecta `/pm-init`; `prd_id` y `prd_dir` los agrega
 `resolve-id`. No hay `nombre` ni `entregable` ni `repo_url`.
 
-## Repo central de PRDs (`enginecx_prd`) — identidad git del `.env`
+## Repo central de PRDs (`enginecx_prd`) — identidad git del EQUIPO
 
 Todo `git` que toque `enginecx_prd` (clonar, commitear, pushear) se hace SIEMPRE con el bin
-`prd-sync` (`node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" <sub>`), que toma la
-identidad del **`.env` del plugin**: `ENGINECX_PRD_REPO` (repo), `ENGINECX_PRD_GIT_USER` +
-`ENGINECX_PRD_GIT_TOKEN` (clone/push autenticados) y `ENGINECX_PRD_GIT_USER` +
-`ENGINECX_PRD_GIT_EMAIL` (autor/committer del commit). **NUNCA** ejecutes `git` manual sobre
-`enginecx_prd` ni uses tu identidad o credenciales locales: siempre a través del bin.
+`prd-sync` (`node "${CLAUDE_PLUGIN_ROOT}/packages/prd-sync/dist/cli.js" <sub>`). Del `.env` solo
+lee `ENGINECX_PRD_REPO` (la **ubicación** del repo, que no es un secreto); la **identidad y las
+credenciales las aporta el git ya configurado en el equipo**: `user.name`/`user.email` globales
+para la autoría del commit, y el credential helper / `gh` / SSH para autenticar clone/push. El
+`.env` **NO** lleva credenciales de GitHub. **NUNCA** ejecutes `git` manual sobre `enginecx_prd`:
+siempre a través del bin.
 
 ## Navegación (no leas todo)
 

@@ -132,8 +132,9 @@ raíz del plugin y completarlo, y **no continúes** con el resto de los pasos.
 Credenciales requeridas:
 - **Índice / MCP** (Supabase + embeddings): `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`,
   `PM_EMBEDDINGS_KEY`.
-- **Repo central de PRDs** (`prd-sync`): `ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`,
-  `ENGINECX_PRD_GIT_EMAIL`, `ENGINECX_PRD_GIT_TOKEN`.
+- **Repo central de PRDs** (`prd-sync`): `ENGINECX_PRD_REPO` (solo la ubicación del repo; el
+  `.env` **ya no lleva** credenciales de GitHub — el push usa el git del equipo, que `/instalar`
+  verifica).
 
 Corre este chequeo (reporta ✓/✗ por clave y **NUNCA imprime los valores**, solo el nombre):
 
@@ -141,11 +142,10 @@ Corre este chequeo (reporta ✓/✗ por clave y **NUNCA imprime los valores**, s
 ENV="${CLAUDE_PLUGIN_ROOT}/.env"
 [ -f "$ENV" ] || { echo "✗ No existe $ENV — copia .env.example a la raíz del plugin y complétalo"; exit 1; }
 miss=0
-for k in SUPABASE_URL SUPABASE_SERVICE_KEY PM_EMBEDDINGS_KEY \
-         ENGINECX_PRD_REPO ENGINECX_PRD_GIT_USER ENGINECX_PRD_GIT_EMAIL ENGINECX_PRD_GIT_TOKEN; do
+for k in SUPABASE_URL SUPABASE_SERVICE_KEY PM_EMBEDDINGS_KEY ENGINECX_PRD_REPO; do
   v=$(grep -E "^${k}=" "$ENV" | head -1 | cut -d= -f2- | sed 's/[[:space:]]*#.*$//; s/^[[:space:]]*//; s/[[:space:]]*$//')
   case "$v" in
-    ""|*...|"https://TU-PROYECTO.supabase.co"|"tu-usuario"|"tu-correo@enginecx.com"|*"/ORG/"*)
+    ""|*...|"https://TU-PROYECTO.supabase.co"|*"/ORG/"*)
       echo "✗ $k — falta o sigue con valor de ejemplo"; miss=1 ;;
     *) echo "✓ $k" ;;
   esac
@@ -244,9 +244,10 @@ Resume el PRD resultante en pocas líneas. Recuerda guardar el avance de **códi
 Terminar de construir o ajustar el PRD **culmina SIEMPRE con un commit + push a GitHub**: no
 des la sesión por cerrada sin haber publicado.
 
-> **Identidad git:** el bin `prd-sync` usa el repo/usuario/email/token del `.env` del plugin
-> (`ENGINECX_PRD_REPO`, `ENGINECX_PRD_GIT_USER`, `ENGINECX_PRD_GIT_EMAIL`,
-> `ENGINECX_PRD_GIT_TOKEN`). No hagas `git` manual sobre `enginecx_prd` ni uses tu identidad local.
+> **Identidad git:** el bin `prd-sync` toma del `.env` solo `ENGINECX_PRD_REPO` (ubicación del
+> repo) y usa la **identidad y credenciales de git del equipo** (`user.name`/`user.email` +
+> credential helper/`gh`/SSH) para clonar/commitear/pushear. El `.env` **no** lleva credenciales
+> de GitHub. Sigue haciendo TODO vía el bin; no ejecutes `git` manual sobre `enginecx_prd`.
 
 > **Qué se sube.** El espejo publica **TODO** `manager/`: el `PRD.md` **y** lo que se agregó
 > en esta sesión — los transcripts nuevos en `transcripts/` y sus condensados en
